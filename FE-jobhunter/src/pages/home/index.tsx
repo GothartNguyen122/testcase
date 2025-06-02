@@ -1,0 +1,23 @@
+import { Divider } from 'antd';
+import styles from 'styles/client.module.scss';
+import SearchClient from '@/components/client/search.client';
+import JobCard from '@/components/client/card/job.card';
+import CompanyCard from '@/components/client/card/company.card';
+
+const HomePage = () => {
+    return (
+        <div className={`${styles["container"]} ${styles["home-section"]}`}>
+            <div className="search-content" style={{ marginTop: 20 }}>
+                <SearchClient />
+            </div>
+            <Divider style={{ borderWidth: 1, borderColor: 'rgb(0 0 0)' }} /> {/* Đặt độ dày và màu sắc của Divider */}
+            <CompanyCard />
+            <div style={{ margin: 50 }}></div>
+            <Divider style={{ borderWidth: 1, borderColor: 'rgb(0 0 0)' }} /> {/* Đặt độ dày và màu sắc của Divider */}
+            <JobCard />
+        </div>
+
+    )
+}
+
+export default HomePage;
