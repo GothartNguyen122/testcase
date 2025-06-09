@@ -147,20 +147,31 @@ const JobClusterCard = (props: IProps) => {
                         {displayJob?.map(item => {
                             return (
                                 <Col span={24} md={12} key={item.id}>
-                                    <Card size="small" title={null} hoverable
+                                    <Card
+                                        size="small"
+                                        title={null}
+                                        hoverable
+                                        className={styles["card-job-antd"]}
                                         onClick={() => handleViewDetailJob(item)}
+                                        bodyStyle={{ padding: 0, borderRadius: 16 }}
+                                        style={{ maxWidth: 500, margin: '0 auto', width: '100%', borderRadius: 16 }}
                                     >
                                         <div className={styles["card-job-content"]}>
                                             <div className={styles["card-job-left"]}>
                                                 <img
-                                                    alt="example"
+                                                    alt="logo"
                                                     src={`${import.meta.env.VITE_BACKEND_URL}/storage/company/${item?.company?.logo}`}
+                                                    className={styles["job-logo"]}
                                                 />
                                             </div>
                                             <div className={styles["card-job-right"]}>
                                                 <div className={styles["job-title"]}>{item.name}</div>
-                                                <div className={styles["job-location"]}><EnvironmentOutlined style={{ color: '#58aaab' }} />&nbsp;{getLocationName(item.location)}</div>
-                                                <div><ThunderboltOutlined style={{ color: 'orange' }} />&nbsp;{(item.salary + "")?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} đ</div>
+                                                <div className={styles["job-location"]}>
+                                                    <EnvironmentOutlined />&nbsp;{getLocationName(item.location)}
+                                                </div>
+                                                <div className={styles["job-salary"]}>
+                                                    <ThunderboltOutlined />&nbsp;{(item.salary + "")?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} đ
+                                                </div>
                                                 <div className={styles["job-updatedAt"]}>
                                                     {getTimeDifference(item.updatedAt ?? item.createdAt)}
                                                 </div>

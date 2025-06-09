@@ -104,18 +104,41 @@ const Header = (props: any) => {
                                 <ConfigProvider
                                     theme={{
                                         token: {
-                                            colorPrimary: '#fff',
-                                            colorBgContainer: '#222831',
-                                            colorText: '#a7a7a7',
+                                            colorPrimary: '#ff9800',
+                                            colorBgContainer: 'rgba(26,26,26,0.96)',
+                                            colorText: '#ffeaea',
+                                            colorTextBase: '#ffeaea',
+                                            colorTextHeading: '#fff176',
+                                            fontFamily: 'Montserrat, Arial, sans-serif',
                                         },
+                                        components: {
+                                            Menu: {
+                                                itemColor: '#ffeaea',
+                                                itemHoverColor: '#fff176',
+                                                itemSelectedColor: '#ff9800',
+                                                itemSelectedBg: 'rgba(255,255,255,0.08)',
+                                                itemBg: 'rgba(26,26,26,0.96)',
+                                                horizontalItemBorderRadius: 10,
+                                                horizontalItemHoverBg: 'rgba(255,255,255,0.06)',
+                                            }
+                                        }
                                     }}
                                 >
 
                                     <Menu
-                                        // onClick={onClick}
                                         selectedKeys={[current]}
                                         mode="horizontal"
                                         items={items}
+                                        style={{
+                                            background: 'rgba(26,26,26,0.96)',
+                                            borderRadius: 12,
+                                            boxShadow: '0 2px 12px rgba(183,28,28,0.10)',
+                                            fontFamily: 'Montserrat, Arial, sans-serif',
+                                            fontWeight: 600,
+                                            fontSize: 17,
+                                            minHeight: 48,
+                                            marginTop: 6,
+                                        }}
                                     />
                                 </ConfigProvider>
                                 <div className={styles['extra']}>

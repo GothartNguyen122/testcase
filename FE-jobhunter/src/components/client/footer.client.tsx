@@ -7,25 +7,31 @@ const Footer = () => {
             <div className={styles['footer-content']}>
                 <div className={styles['footer-bottom']}>
                     <div className={styles['footer-right']}>
-                        <p>
-                            <PhoneOutlined style={{ color: "#1677ff", marginRight: 8 }} />
-                            Hồ Chí Minh: (+84) 123 456 789
-                        </p>
-                        <p>
-                            <PhoneOutlined style={{ color: "#1677ff", marginRight: 8 }} />
-                            Hà Nội: (+84) 987 654 321
-                        </p>
+                        <div className={styles['footer-col']}>
+                            <p style={{ color: '#fff176', fontWeight: 600 }}>Liên hệ</p>
+                            <p><span style={{ color: '#ff9800' }}>Địa chỉ:</span> 123 Đường Số 1, Quận 1, TP. Hồ Chí Minh</p>
+                            <p><span style={{ color: '#ff9800' }}>Hotline:</span> 1900 1234</p>
+                            <p><span style={{ color: '#ff9800' }}>Email:</span> <a href="mailto:support@jobhunter.vn" style={{color:'#ff9800'}}>support@jobhunter.vn</a></p>
+                            <p><span style={{ color: '#ff9800' }}>MST:</span> 0312192258</p>
+                        </div>
+                        <div className={styles['footer-col']}>
+                            <p style={{ color: '#fff176', fontWeight: 600 }}>JobHunter</p>
+                            <p style={{marginTop: 8, color: '#ffeaea'}}>Việc làm IT - Kết nối cơ hội, phát triển tương lai</p>
+                            <p style={{margin: 0, color: '#ffeaea'}}>Copyright &copy; {new Date().getFullYear()} JobHunter</p>
+                            <p style={{margin: 0, color: '#ffeaea'}}>All rights reserved.</p>
+                        </div>
+                        <div className={styles['footer-col']}>
+                            <p style={{ color: '#fff176', fontWeight: 600 }}>Kết nối với chúng tôi</p>
+                            <div style={{marginTop: 8}}>
+                                <a href="#" style={{color:'#ff9800', marginRight: 18, fontSize: 22, textDecoration:'none'}}>Facebook</a>
+                                <a href="#" style={{color:'#ff9800', marginRight: 18, fontSize: 22, textDecoration:'none'}}>LinkedIn</a>
+                                <a href="#" style={{color:'#ff9800', fontSize: 22, textDecoration:'none'}}>YouTube</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div className={styles['footer-divider']}></div>
-
-                <div className={styles['footer-top']}>
-                    <div className={styles['footer-left']}>
-                        <p>Copyright &copy; Việc làm IT</p>
-                        <p>MST: 0312192258</p>
-                    </div>
-                </div>
             </div>
         </footer>
     );

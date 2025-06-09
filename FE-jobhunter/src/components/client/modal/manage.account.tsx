@@ -135,7 +135,18 @@ const UserUpdateInfo = () => {
             const { name, email, age, gender, address, salary, level, skills } = values;
             const arrSkills = values?.skills?.map((item: string) => { return { id: +item } })
             const id = user.id;
-            const res = await callUpdateUser(id, name, email, +age, gender, address, salary, level, arrSkills);
+            const userUpdate = {
+                id,
+                name,
+                email,
+                age: +age,
+                gender,
+                address,
+                salary,
+                level,
+                skills: arrSkills
+            };
+            const res = await callUpdateUser(userUpdate);
             if (res && res.message) {
                 message.success("Cập nhật thông tin thành công!");
                 setUserInfo(values);

@@ -42,60 +42,58 @@ const ClientJobDetailPage = (props: any) => {
             {isLoading ?
                 <Skeleton />
                 :
-                <Row gutter={[20, 20]}>
-                    {jobDetail && jobDetail.id &&
-                        <>
-                            <Col span={24} md={16}>
-                                <div className={styles["header"]}>
-                                    {jobDetail.name}
+                jobDetail && jobDetail.id && (
+                    <div className={styles["company-detail-wrapper"]}>
+                        {/* Header: Logo, tên job, badge, info hàng ngang */}
+                        <div className={styles["company-detail-header"]}>
+                            <div className={styles["company-detail-logo-block"]}>
+                                <img
+                                    className={styles["company-detail-logo"]}
+                                    alt="logo"
+                                    src={`${import.meta.env.VITE_BACKEND_URL}/storage/company/${jobDetail.company?.logo}`}
+                                />
+                            </div>
+                            <div className={styles["company-detail-header-info"]}>
+                                <div className={styles["company-detail-title"]}>
+                                    <span>{jobDetail.name}</span>
+                                    <span className={styles["company-detail-badge"]}><DollarOutlined style={{color:'#FFD700', marginRight:4}}/>Hot Job</span>
                                 </div>
-                                <div>
+                                <div className={styles["company-detail-meta"]}>
+                                    <span><EnvironmentOutlined style={{ color: '#58aaab', marginRight:4 }} />{getLocationName(jobDetail.location)}</span>
+                                    <span><DollarOutlined style={{color:'#26d0ce', marginRight:4}}/> {(jobDetail.salary + "")?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} đ</span>
+                                    <span><HistoryOutlined style={{color:'#aaa', marginRight:4}}/> {jobDetail.updatedAt ? dayjs(jobDetail.updatedAt).locale("en").fromNow() : dayjs(jobDetail.createdAt).locale("en").fromNow()}</span>
+                                </div>
+                                <div className={styles["company-detail-meta"]}>
+                                    <span style={{fontWeight:600, color:'#1a2980'}}>Công ty: {jobDetail.company?.name}</span>
+                                </div>
+                                <div style={{marginTop:12}}>
                                     <button
                                         onClick={() => setIsModalOpen(true)}
                                         className={styles["btn-apply"]}
-                                    >Apply Now</button>
+                                    >Ứng tuyển ngay</button>
                                 </div>
-                                <Divider />
-                                <div className={styles["skills"]}>
-                                    {jobDetail?.skills?.map((item, index) => {
-                                        return (
-                                            <Tag key={`${index}-key`} color="gold" >
-                                                {item.name}
-                                            </Tag>
-                                        )
-                                    })}
-                                </div>
-                                <div className={styles["salary"]}>
-                                    <DollarOutlined />
-                                    <span>&nbsp;{(jobDetail.salary + "")?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} đ</span>
-                                </div>
-                                <div className={styles["location"]}>
-                                    <EnvironmentOutlined style={{ color: '#58aaab' }} />&nbsp;{getLocationName(jobDetail.location)}
-                                </div>
-                                <div>
-                                    <HistoryOutlined /> {jobDetail.updatedAt ? dayjs(jobDetail.updatedAt).locale("en").fromNow() : dayjs(jobDetail.createdAt).locale("en").fromNow()}
-                                </div>
-                                <Divider />
-                                {parse(jobDetail.description)}
-                            </Col>
+                            </div>
+                        </div>
 
-                            <Col span={24} md={8}>
-                                <div className={styles["company"]}>
-                                    <div>
-                                        <img
-                                            width={"200px"}
-                                            alt="example"
-                                            src={`${import.meta.env.VITE_BACKEND_URL}/storage/company/${jobDetail.company?.logo}`}
-                                        />
-                                    </div>
-                                    <div>
-                                        {jobDetail.company?.name}
-                                    </div>
-                                </div>
-                            </Col>
-                        </>
-                    }
-                </Row>
+                        {/* Section kỹ năng yêu cầu */}
+                        <div className={styles["company-detail-section"]}>
+                            <h3 className={styles["company-detail-section-title"]}>Kỹ năng yêu cầu</h3>
+                            <div className={styles["skills"]}>
+                                {jobDetail?.skills?.map((item, index) => (
+                                    <Tag key={`${index}-key`} color="gold" >
+                                        {item.name}
+                                    </Tag>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Section mô tả công việc */}
+                        <div className={styles["company-detail-section"]}>
+                            <h3 className={styles["company-detail-section-title"]}>Mô tả công việc</h3>
+                            <div className={styles["company-detail-desc"]}>{parse(jobDetail.description)}</div>
+                        </div>
+                    </div>
+                )
             }
             <ApplyModal
                 isModalOpen={isModalOpen}

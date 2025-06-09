@@ -26,6 +26,7 @@ import vn.hoidanit.jobhunter.domain.response.job.ResUpdateJobDTO;
 import vn.hoidanit.jobhunter.service.JobService;
 import vn.hoidanit.jobhunter.util.annotation.ApiMessage;
 import vn.hoidanit.jobhunter.util.error.IdInvalidException;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -83,13 +84,19 @@ public class JobController {
 
     @DeleteMapping("/jobs/{id}")
     @ApiMessage("Delete a job by id")
-    public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException {
+    public ResponseEntity<?> delete(@PathVariable("id") long id) {
         Optional<Job> currentJob = this.jobService.fetchJobById(id);
         if (!currentJob.isPresent()) {
-            throw new IdInvalidException("Job not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Collections.singletonMap("message", "Job không tồn tại"));
         }
-        this.jobService.delete(id);
-        return ResponseEntity.ok().body(null);
+        try {
+            this.jobService.delete(id);
+            return ResponseEntity.ok().body(null);
+        } catch (IdInvalidException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/jobs/{id}")

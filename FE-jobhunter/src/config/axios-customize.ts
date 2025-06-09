@@ -69,6 +69,8 @@ instance.interceptors.response.use(
             const message = error?.response?.data?.error ?? "Có lỗi xảy ra, vui lòng login.";
             //dispatch redux action
             store.dispatch(setRefreshTokenAction({ status: true, message }));
+            // Trường hợp này vẫn trả về error.response.data để FE xử lý
+            return Promise.reject(error);
         }
 
         if (+error.response.status === 403) {
@@ -78,7 +80,8 @@ instance.interceptors.response.use(
             })
         }
 
-        return error?.response?.data ?? Promise.reject(error);
+        // Luôn ném lỗi cho các status code không phải 2xx
+        return Promise.reject(error);
     }
 );
 

@@ -24,17 +24,30 @@ const JobPage = () => {
     const navigate = useNavigate();
 
     const handleDeleteJob = async (id: string | undefined) => {
-        if (id) {
+        if (!id) return;
+        try {
             const res = await callDeleteJob(id);
-            if (res && +res.statusCode == 200) {
-                message.success('Xóa Job thành công');
-                reloadTable();
-            } else {
-                notification.error({
-                    message: 'Có lỗi xảy ra',
-                    description: res.message
-                });
+            console.log('RES:', res);
+            message.success('Xóa job thành công');
+            reloadTable();
+        } catch (error: any) {
+            console.log('ERROR:', error);
+            let msg = 'Không thể xóa công việc';
+            let description = 'Có lỗi xảy ra';
+
+            if (error?.response) {
+                if (typeof error.response.data === 'string') {
+                    description = error.response.data;
+                } else if (error.response.data?.message) {
+                    description = error.response.data.message;
+                }
+                msg = 'Không thể xóa công việc';
             }
+
+            notification.error({
+                message: msg,
+                description: description
+            });
         }
     }
 

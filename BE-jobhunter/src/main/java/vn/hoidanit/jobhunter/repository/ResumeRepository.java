@@ -8,6 +8,8 @@ import vn.hoidanit.jobhunter.domain.Resume;
 
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume, Long>,
-        JpaSpecificationExecutor<Resume> {
+                JpaSpecificationExecutor<Resume> {
+
+        boolean existsByJobId(Long jobId);
 
 }

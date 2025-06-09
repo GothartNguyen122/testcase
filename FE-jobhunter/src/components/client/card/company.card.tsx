@@ -78,29 +78,33 @@ const CompanyCard = (props: IProps) => {
                             </div>
                         </Col>
 
-                        {displayCompany?.map(item => {
-                            return (
-                                <Col span={24} md={6} key={item.id}>
-                                    <Card
-                                        onClick={() => handleViewDetailJob(item)}
-                                        style={{ height: 400, backgroundColor: '#d9d9d98f', border: '1px solid rgb(193 193 193)', borderRadius: '8px', padding: '5px' }}
-                                        hoverable
-                                        cover={
-                                            <div className={styles["card-customize"]} >
-                                                <img
-                                                    style={{ maxWidth: "200px" }}
-                                                    alt="example"
-                                                    src={`${import.meta.env.VITE_BACKEND_URL}/storage/company/${item?.logo}`}
-                                                />
-                                            </div>
-                                        }
-                                    >
-                                        <Divider style={{ borderWidth: 1, borderColor: 'rgb(158 203 153)' }} />
-                                        <h3 style={{ textAlign: "center" }}>{item.name}</h3>
-                                    </Card>
-                                </Col>
-                            )
-                        })}
+                        {displayCompany?.map((item, idx) => (
+                            <Col span={24} md={6} key={item.id}>
+                                <div className={styles["card-customize"]} onClick={() => handleViewDetailJob(item)} style={{ cursor: 'pointer' }}>
+                                    {/* Badge Top lớn */}
+                                    {idx < 4 && (
+                                        <div className={styles["company-badge"]} style={{ background: idx === 0 ? 'linear-gradient(90deg, #FFD700 0%, #FFB300 100%)' : idx === 1 ? 'linear-gradient(90deg, #B0B0B0 0%, #B0B0B0 100%)' : idx === 2 ? 'linear-gradient(90deg, #CD7F32 0%, #CD7F32 100%)' : 'linear-gradient(90deg, #26d0ce 0%, #1a2980 100%)' }}>
+                                            <span style={{fontSize: 20, marginRight: 6}}>🏆</span>Top {idx + 1}
+                                        </div>
+                                    )}
+                                    {/* Logo công ty */}
+                                    <img
+                                        className={styles["company-logo"]}
+                                        alt="logo"
+                                        src={`${import.meta.env.VITE_BACKEND_URL}/storage/company/${item?.logo}`}
+                                    />
+                                    {/* Tên công ty */}
+                                    <div className={styles["company-title"]}>{item.name}</div>
+                                    {/* Thông tin phụ */}
+                                    <div className={styles["company-info"]}>Ngành nghề: <span style={{color:'#26d0ce'}}>Công nghệ thông tin</span></div>
+                                    <div className={styles["company-info"]}>Đang tuyển: <span style={{color:'#ff9800'}}>12 vị trí</span></div>
+                                    {/* Link chi tiết */}
+                                    <div style={{marginTop: 10}}>
+                                        <a href="#" className={styles["company-link"]} onClick={e => { e.stopPropagation(); handleViewDetailJob(item); }}>View details</a>
+                                    </div>
+                                </div>
+                            </Col>
+                        ))}
 
                         {(!displayCompany || displayCompany && displayCompany.length === 0)
                             && !isLoading &&
