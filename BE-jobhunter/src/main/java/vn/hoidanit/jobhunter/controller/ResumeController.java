@@ -111,11 +111,18 @@ public class ResumeController {
             @Filter Specification<Resume> spec,
             Pageable pageable) {
 
-        List<Long> arrJobIds = null;
         String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
                 ? SecurityUtil.getCurrentUserLogin().get()
                 : "";
         User currentUser = this.userService.handleGetUserByUsername(email);
+
+        // Nếu là SUPER_ADMIN thì không filter theo job/company
+        if (currentUser != null && currentUser.getRole() != null
+                && "SUPER_ADMIN".equals(currentUser.getRole().getName())) {
+            return ResponseEntity.ok().body(this.resumeService.fetchAllResume(spec, pageable));
+        }
+
+        List<Long> arrJobIds = null;
         if (currentUser != null) {
             Company userCompany = currentUser.getCompany();
             if (userCompany != null) {

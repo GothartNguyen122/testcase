@@ -12,7 +12,7 @@ import ViewDetailResume from "@/components/admin/resume/view.resume";
 import { ALL_PERMISSIONS } from "@/config/permissions";
 import Access from "@/components/share/access";
 import { sfIn } from "spring-filter-query-builder";
-import { EditOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined } from "@ant-design/icons";
 
 const ResumePage = () => {
     const tableRef = useRef<ActionType>();
@@ -21,6 +21,7 @@ const ResumePage = () => {
     const meta = useAppSelector(state => state.resume.meta);
     const resumes = useAppSelector(state => state.resume.result);
     const dispatch = useAppDispatch();
+    const user = useAppSelector(state => state.account.user);
 
     const [dataInit, setDataInit] = useState<IResume | null>(null);
     const [openViewDetail, setOpenViewDetail] = useState<boolean>(false);
@@ -117,7 +118,22 @@ const ResumePage = () => {
             hideInSearch: true,
         },
         {
-
+            title: 'Chi tiết CV',
+            dataIndex: 'url',
+            width: 120,
+            align: 'center',
+            render: (text, record) => (
+                <a
+                    href={`${import.meta.env.VITE_BACKEND_URL}/storage/resume/${record?.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#1890ff', fontWeight: 500 }}
+                >
+                    <EyeOutlined /> Xem chi tiết
+                </a>
+            )
+        },
+        {
             title: 'Actions',
             hideInSearch: true,
             width: 100,
@@ -210,7 +226,13 @@ const ResumePage = () => {
                     columns={columns}
                     dataSource={resumes}
                     request={async (params, sort, filter): Promise<any> => {
-                        const query = buildQuery(params, sort, filter);
+                        let query = buildQuery(params, sort, filter);
+                        // Nếu là SUPER_ADMIN thì không filter theo công ty hay user, fetch all
+                        if (user?.role?.name === 'SUPER_ADMIN') {
+                            // Xóa filter liên quan đến công ty/user nếu có
+                            // hoặc truyền query rỗng để lấy toàn bộ
+                            query = query.replace(/filter=[^&]*/g, '');
+                        }
                         dispatch(fetchResume({ query }))
                     }}
                     scroll={{ x: true }}
