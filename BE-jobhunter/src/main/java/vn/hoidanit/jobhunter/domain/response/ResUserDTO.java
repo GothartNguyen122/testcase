@@ -1,11 +1,13 @@
 package vn.hoidanit.jobhunter.domain.response;
 
 import java.time.Instant;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import vn.hoidanit.jobhunter.domain.Skill;
 import vn.hoidanit.jobhunter.util.constant.GenderEnum;
 
 @Getter
@@ -25,6 +27,7 @@ public class ResUserDTO {
     private CompanyUser company;
 
     private RoleUser role;
+    private List<Skill> skills;
 
     @Getter
     @Setter

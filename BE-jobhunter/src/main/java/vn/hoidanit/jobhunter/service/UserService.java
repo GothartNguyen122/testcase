@@ -17,6 +17,8 @@ import vn.hoidanit.jobhunter.domain.response.ResUpdateUserDTO;
 import vn.hoidanit.jobhunter.domain.response.ResUserDTO;
 import vn.hoidanit.jobhunter.domain.response.ResultPaginationDTO;
 import vn.hoidanit.jobhunter.repository.UserRepository;
+import vn.hoidanit.jobhunter.domain.Skill;
+import vn.hoidanit.jobhunter.repository.SkillRepository;
 
 @Service
 public class UserService {
@@ -24,13 +26,16 @@ public class UserService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
     private final RoleService roleService;
+    private final SkillRepository skillRepository;
 
     public UserService(UserRepository userRepository,
             CompanyService companyService,
-            RoleService roleService) {
+            RoleService roleService,
+            SkillRepository skillRepository) {
         this.userRepository = userRepository;
         this.companyService = companyService;
         this.roleService = roleService;
+        this.skillRepository = skillRepository;
     }
 
     public User handleCreateUser(User user) {
@@ -102,6 +107,20 @@ public class UserService {
             if (reqUser.getRole() != null) {
                 Role r = this.roleService.fetchById(reqUser.getRole().getId());
                 currentUser.setRole(r != null ? r : null);
+            }
+
+            // update salary luôn, level nếu khác null
+            currentUser.setSalary(reqUser.getSalary());
+            if (reqUser.getLevel() != null) {
+                currentUser.setLevel(reqUser.getLevel());
+            }
+            // update skills giống bên job
+            if (reqUser.getSkills() != null) {
+                List<Long> reqSkills = reqUser.getSkills()
+                        .stream().map(x -> x.getId())
+                        .collect(Collectors.toList());
+                List<Skill> dbSkills = this.skillRepository.findByIdIn(reqSkills);
+                currentUser.setSkills(dbSkills);
             }
 
             // update

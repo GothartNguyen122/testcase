@@ -115,6 +115,17 @@ const UserUpdateInfo = () => {
         init(); // Gọi hàm init
     }, []);
 
+    // Fill lại form mỗi khi userInfo thay đổi (khi mở modal hoặc cập nhật xong)
+    useEffect(() => {
+        console.log('userInfo:', userInfo);
+        if (userInfo) {
+            form.setFieldsValue({
+                ...userInfo,
+                skills: userInfo?.skills?.map((item: any) => item.id.toString()),
+            });
+        }
+    }, [userInfo, form]);
+
     async function fetchSkillList(): Promise<ISkillSelect[]> {
         const res = await callFetchAllSkill(`page=1&size=100`);
         if (res && res.data) {
@@ -176,7 +187,10 @@ const UserUpdateInfo = () => {
         <ProForm
             form={form}
             onFinish={submitUserInfo} // Form submission handler
-            initialValues={userInfo} // Set initial values for the form
+            initialValues={{
+                ...userInfo,
+                skills: userInfo?.skills?.map((item: any) => item.id.toString()),
+            }}
             submitter={{
                 searchConfig: {
                     submitText: "Cập nhật", // Set submit button text
@@ -189,7 +203,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Họ tên"
                 name="name"
-                initialValue={userInfo?.name}
                 rules={[{ required: true, message: "Họ tên không được để trống!" }]}
             >
                 <Input placeholder="Nhập họ tên" />
@@ -199,7 +212,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Email"
                 name="email"
-                initialValue={userInfo?.email}
                 rules={[{ required: true }]}
             >
                 <Input disabled />
@@ -209,7 +221,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Tuổi"
                 name="age"
-                initialValue={userInfo?.age}
                 rules={[
                     { required: true, message: "Tuổi không được để trống!" },
                     { pattern: /^[0-9]+$/, message: "Chỉ được nhập số" }
@@ -222,7 +233,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Giới tính"
                 name="gender"
-                initialValue={userInfo?.gender}
                 rules={[{ required: true, message: "Giới tính không được để trống!" }]}
             >
                 <Select
@@ -239,7 +249,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Địa chỉ"
                 name="address"
-                initialValue={userInfo?.address}
                 rules={[{ required: true, message: "Địa chỉ không được để trống!" }]}
             >
                 <Input placeholder="Nhập địa chỉ" />
@@ -249,7 +258,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Lương"
                 name="salary"
-                initialValue={userInfo?.salary}
                 rules={[
                     { required: true, message: "Lương không được để trống!" },
                     { pattern: /^[0-9]+$/, message: "Chỉ được nhập số" }
@@ -262,7 +270,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Cấp bậc"
                 name="level"
-                initialValue={userInfo?.level}
                 rules={[{ required: true, message: "Cấp bậc không được để trống!" }]}
             >
                 <Select
@@ -281,7 +288,6 @@ const UserUpdateInfo = () => {
             <ProForm.Item
                 label="Kỹ năng"
                 name="skills"
-                initialValue={userInfo?.skills?.map((item: any) => item.id.toString())} // Assuming `userInfo.skills` contains skill IDs
                 rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 kỹ năng!" }]}
             >
                 <Select
@@ -289,7 +295,7 @@ const UserUpdateInfo = () => {
                     allowClear
                     suffixIcon={null}
                     style={{ width: "100%" }}
-                    placeholder={<><MonitorOutlined /> Tìm theo kỹ năng...</>}
+                    placeholder={<>Tìm theo kỹ năng...</>}
                     optionLabelProp="label"
                     options={optionsSkills}
                 />
