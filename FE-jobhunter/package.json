@@ -9,6 +9,7 @@
     "dev": "vite",
     "start": "vite",
     "build": "tsc && vite build",
+    "build-uat": "tsc && vite build --mode uat",
     "preview": "vite preview"
   },
   "dependencies": {

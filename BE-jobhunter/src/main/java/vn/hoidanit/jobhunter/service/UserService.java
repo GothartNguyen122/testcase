@@ -198,7 +198,7 @@ public class UserService {
             roleUser.setName(user.getRole().getName());
             res.setRole(roleUser);
         }
-
+        res.setSkills(user.getSkills());
         res.setId(user.getId());
         res.setEmail(user.getEmail());
         res.setName(user.getName());
