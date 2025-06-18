@@ -1,20 +1,23 @@
-import { Button, Col, Form, Input, Modal, Row, Select, Table, Tabs, message, notification } from "antd";
+import { Button, Col, Form, Input, Modal, Row, Select, Table, Tabs, message, notification, Popconfirm, Tooltip } from "antd";
 import { isMobile } from "react-device-detect";
 import type { TabsProps } from 'antd';
 import { IResume, ISubscribers } from "@/types/backend";
 import { useState, useEffect } from 'react';
-import { callCreateSubscriber, callFetchAllSkill, callUpdateUser, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber } from "@/config/api";
+import { callCreateSubscriber, callFetchAllSkill, callUpdateUser, callFetchResumeByUser, callGetSubscriberSkills, callUpdateSubscriber, callFetchAccount, callDeleteResume } from "@/config/api";
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { MonitorOutlined } from "@ant-design/icons";
+import { MonitorOutlined, ReloadOutlined } from "@ant-design/icons";
 import { SKILLS_LIST } from "@/config/utils";
-import { useAppSelector } from "@/redux/hooks";
+import { useAppSelector, useAppDispatch } from "@/redux/hooks";
+import { fetchAccount, setUserLoginInfo } from "@/redux/slice/accountSlide";
 import { ProForm } from "@ant-design/pro-components";
 import { useNavigate } from "react-router-dom";
+import { DebounceSelect } from "@/components/admin/user/debouce.select";
 
 interface IProps {
     open: boolean;
     onClose: (v: boolean) => void;
+    onSuccess?: () => void;
 }
 interface ISkillSelect {
     label: string;
@@ -25,18 +28,100 @@ interface ISkillSelect {
 const UserResume = (props: any) => {
     const [listCV, setListCV] = useState<IResume[]>([]);
     const [isFetching, setIsFetching] = useState<boolean>(false);
+    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [pageSize, setPageSize] = useState<number>(5);
+    const [total, setTotal] = useState<number>(0);
+    const [sortField, setSortField] = useState<string>('');
+    const [sortOrder, setSortOrder] = useState<string>('');
+    const [error, setError] = useState<string>('');
+
+    const fetchResumes = async (page: number = 1, size: number = 5) => {
+        setIsFetching(true);
+        setError('');
+        try {
+            const query = `page=${page}&size=${size}`;
+            const res = await callFetchResumeByUser(query);
+            if (res && res.data) {
+                setListCV(res.data.result as IResume[]);
+                setTotal(res.data.meta?.total || 0);
+            } else {
+                setError('Không thể tải danh sách CV. Vui lòng thử lại.');
+            }
+        } catch (error) {
+            console.error('Error fetching resumes:', error);
+            setError('Có lỗi xảy ra khi tải danh sách CV. Vui lòng thử lại.');
+        }
+        setIsFetching(false);
+    };
 
     useEffect(() => {
-        const init = async () => {
-            setIsFetching(true);
-            const res = await callFetchResumeByUser();
-            if (res && res.data) {
-                setListCV(res.data.result as IResume[])
+        fetchResumes(currentPage, pageSize);
+    }, [currentPage, pageSize]);
+
+    const handleTableChange = (pagination: any, filters: any, sorter: any) => {
+        setCurrentPage(pagination.current);
+        setPageSize(pagination.pageSize);
+        setSortField(sorter.field || '');
+        setSortOrder(sorter.order || '');
+    };
+
+    const handleWithdrawCV = async (record: IResume) => {
+        // Kiểm tra trạng thái CV
+        if (record.status !== 'PENDING') {
+            let errorMessage = '';
+            switch (record.status) {
+                case 'REVIEWING':
+                    errorMessage = 'Không thể rút CV đang được xem xét. Vui lòng chờ kết quả từ nhà tuyển dụng.';
+                    break;
+                case 'APPROVED':
+                    errorMessage = 'Không thể rút CV đã được duyệt. CV của bạn đã được chấp nhận.';
+                    break;
+                case 'REJECTED':
+                    errorMessage = 'Không thể rút CV đã bị từ chối. CV này đã được xử lý.';
+                    break;
+                case 'INTERVIEW':
+                    errorMessage = 'Không thể rút CV đang trong quá trình phỏng vấn. Vui lòng liên hệ nhà tuyển dụng.';
+                    break;
+                case 'HIRED':
+                    errorMessage = 'Không thể rút CV đã được tuyển dụng. Bạn đã được nhận vào làm việc.';
+                    break;
+                default:
+                    errorMessage = 'Không thể rút CV với trạng thái hiện tại.';
             }
-            setIsFetching(false);
+            notification.error({
+                message: 'Không thể rút CV',
+                description: errorMessage
+            });
+            return;
         }
-        init();
-    }, [])
+
+        try {
+            if (!record.id) {
+                notification.error({
+                    message: 'Có lỗi xảy ra',
+                    description: 'ID CV không hợp lệ.'
+                });
+                return;
+            }
+            
+            const res = await callDeleteResume(record.id);
+            if (res && res.statusCode === 200) {
+                message.success('Rút CV thành công!');
+                // Reload danh sách CV
+                fetchResumes(currentPage, pageSize);
+            } else {
+                notification.error({
+                    message: 'Có lỗi xảy ra',
+                    description: res?.message || 'Không thể rút CV. Vui lòng thử lại.'
+                });
+            }
+        } catch (error) {
+            notification.error({
+                message: 'Có lỗi xảy ra',
+                description: 'Không thể rút CV. Vui lòng thử lại.'
+            });
+        }
+    }
 
     const columns: ColumnsType<IResume> = [
         {
@@ -54,20 +139,86 @@ const UserResume = (props: any) => {
         {
             title: 'Công Ty',
             dataIndex: "companyName",
-
+            sorter: (a, b) => a.companyName.localeCompare(b.companyName),
+            sortDirections: ['ascend', 'descend'],
+            render: (companyName: string) => {
+                return companyName || 'N/A';
+            }
         },
         {
             title: 'Job title',
-            dataIndex: ["job", "name"],
-
+            dataIndex: "job",
+            sorter: (a, b) => a.job.name.localeCompare(b.job.name),
+            sortDirections: ['ascend', 'descend'],
+            render: (job: any) => {
+                return job?.name || 'N/A';
+            }
         },
         {
             title: 'Trạng thái',
             dataIndex: "status",
+            sorter: (a, b) => (a.status || '').localeCompare(b.status || ''),
+            sortDirections: ['ascend', 'descend'],
+            width: 120,
+            render: (status: string) => {
+                let color = '';
+                let text = '';
+                
+                switch (status) {
+                    case 'PENDING':
+                        color = '#faad14';
+                        text = 'Chờ xử lý';
+                        break;
+                    case 'REVIEWING':
+                        color = '#1890ff';
+                        text = 'Đang xem xét';
+                        break;
+                    case 'APPROVED':
+                        color = '#52c41a';
+                        text = 'Đã duyệt';
+                        break;
+                    case 'REJECTED':
+                        color = '#ff4d4f';
+                        text = 'Từ chối';
+                        break;
+                    case 'INTERVIEW':
+                        color = '#1890ff';
+                        text = 'Phỏng vấn';
+                        break;
+                    case 'HIRED':
+                        color = '#722ed1';
+                        text = 'Đã tuyển';
+                        break;
+                    default:
+                        color = '#d9d9d9';
+                        text = status || 'N/A';
+                }
+                
+                return (
+                    <span style={{ 
+                        color: 'white', 
+                        backgroundColor: color, 
+                        padding: '4px 8px', 
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap',
+                        display: 'inline-block'
+                    }}>
+                        {text}
+                    </span>
+                );
+            },
         },
         {
             title: 'Ngày rải CV',
             dataIndex: "createdAt",
+            sorter: (a, b) => {
+                const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return aDate - bDate;
+            },
+            sortDirections: ['ascend', 'descend'],
             render(value, record, index) {
                 return (
                     <>{dayjs(record.createdAt).format('DD-MM-YYYY HH:mm:ss')}</>
@@ -86,43 +237,152 @@ const UserResume = (props: any) => {
                 )
             },
         },
+        {
+            title: 'Thao tác',
+            dataIndex: "actions",
+            width: 100,
+            render(value, record, index) {
+                const isDisabled = record.status !== 'PENDING';
+                let tooltipText = '';
+                
+                if (isDisabled) {
+                    switch (record.status) {
+                        case 'REVIEWING':
+                            tooltipText = 'CV đang được xem xét, không thể rút';
+                            break;
+                        case 'APPROVED':
+                            tooltipText = 'CV đã được duyệt, không thể rút';
+                            break;
+                        case 'REJECTED':
+                            tooltipText = 'CV đã bị từ chối, không thể rút';
+                            break;
+                        case 'INTERVIEW':
+                            tooltipText = 'CV đang phỏng vấn, không thể rút';
+                            break;
+                        case 'HIRED':
+                            tooltipText = 'CV đã được tuyển dụng, không thể rút';
+                            break;
+                        default:
+                            tooltipText = 'Không thể rút CV với trạng thái hiện tại';
+                    }
+                }
+
+                return (
+                    <Popconfirm
+                        title="Xác nhận rút CV"
+                        description="Bạn có chắc chắn muốn rút CV này?"
+                        onConfirm={() => handleWithdrawCV(record)}
+                        okText="Xác nhận"
+                        cancelText="Hủy"
+                        disabled={isDisabled}
+                    >
+                        <Tooltip title={tooltipText}>
+                            <Button 
+                                type="primary" 
+                                danger 
+                                size="small"
+                                disabled={isDisabled}
+                            >
+                                Rút CV
+                            </Button>
+                        </Tooltip>
+                    </Popconfirm>
+                )
+            },
+        },
     ];
 
     return (
         <div>
+            {error && (
+                <div style={{ 
+                    marginBottom: 16, 
+                    padding: 12, 
+                    backgroundColor: '#fff2f0', 
+                    border: '1px solid #ffccc7', 
+                    borderRadius: 6,
+                    color: '#cf1322',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <span>{error}</span>
+                    <Button 
+                        type="primary" 
+                        size="small" 
+                        icon={<ReloadOutlined />}
+                        onClick={() => fetchResumes(currentPage, pageSize)}
+                    >
+                        Thử lại
+                    </Button>
+                </div>
+            )}
             <Table<IResume>
                 columns={columns}
                 dataSource={listCV}
                 loading={isFetching}
-                pagination={false}
+                locale={{
+                    emptyText: error ? 'Có lỗi xảy ra' : 'Chưa có CV nào được rải'
+                }}
+                pagination={{
+                    current: currentPage,
+                    pageSize: pageSize,
+                    total: total,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} CV`,
+                    pageSizeOptions: ['5', '10', '20', '50'],
+                    onChange: (page, size) => {
+                        setCurrentPage(page);
+                        setPageSize(size);
+                    }
+                }}
+                onChange={handleTableChange}
+                rowKey="id"
             />
         </div>
     )
 }
 
-const UserUpdateInfo = () => {
+const UserUpdateInfo = (props: { open: boolean; onSuccess?: () => void }) => {
     const [form] = ProForm.useForm();
-    const navigate = useNavigate();
-    const user = useAppSelector(state => state.account.user); // Assuming user info is in Redux state
-    const [userInfo, setUserInfo] = useState<any>(user); // Set initial user info
-    const [optionsSkills, setOptionsSkills] = useState<ISkillSelect[]>([]); // Options for skills
+    const user = useAppSelector(state => state.account.user);
+    const dispatch = useAppDispatch();
+    const [userInfo, setUserInfo] = useState<any>(user);
+    const [optionsSkills, setOptionsSkills] = useState<ISkillSelect[]>([]);
 
     useEffect(() => {
-        const init = async () => {
-            const temp = await fetchSkillList();
-            setOptionsSkills(temp);
+        setUserInfo(user); // Cập nhật userInfo mỗi khi user thay đổi
+    }, [user]);
+
+    useEffect(() => {
+        if (props.open) {
+            setUserInfo(user); // Khi mở modal, cập nhật lại userInfo
         }
-        init(); // Gọi hàm init
-    }, []);
+    }, [props.open, user]);
 
-    // Fill lại form mỗi khi userInfo thay đổi (khi mở modal hoặc cập nhật xong)
     useEffect(() => {
-        console.log('userInfo:', userInfo);
         if (userInfo) {
-            form.setFieldsValue({
-                ...userInfo,
-                skills: userInfo?.skills?.map((item: any) => item.id.toString()),
-            });
+            console.log("userInfo received:", userInfo);
+            // Xử lý skills để hiển thị tên thay vì id
+            const skillIds = userInfo?.skills?.map((item: any) => item.id?.toString?.() ?? item.id) || [];
+            console.log("skillIds:", skillIds);
+            
+            // Chỉ set các trường có giá trị, không set null/undefined
+            const formValues: any = {};
+            
+            if (userInfo.name) formValues.name = userInfo.name;
+            if (userInfo.email) formValues.email = userInfo.email;
+            if (userInfo.age) formValues.age = userInfo.age.toString();
+            if (userInfo.gender) formValues.gender = userInfo.gender;
+            if (userInfo.address) formValues.address = userInfo.address;
+            if (userInfo.phone) formValues.phone = userInfo.phone;
+            if (userInfo.salary) formValues.salary = userInfo.salary.toString();
+            if (userInfo.level) formValues.level = userInfo.level;
+            if (skillIds.length > 0) formValues.skills = skillIds;
+            
+            console.log("Setting form values:", formValues);
+            form.setFieldsValue(formValues);
         }
     }, [userInfo, form]);
 
@@ -140,28 +400,39 @@ const UserUpdateInfo = () => {
         } else return [];
     }
 
+    useEffect(() => {
+        fetchSkillList().then((data) => {
+            setOptionsSkills(data);
+        });
+    }, []);
+
     // Handle form submission
     const submitUserInfo = async (values: any) => {
         try {
-            const { name, email, age, gender, address, salary, level, skills } = values;
-            const arrSkills = values?.skills?.map((item: string) => { return { id: +item } })
+            const { name, email, age, gender, address, phone, salary, level, skills } = values;
+            const arrSkills = values?.skills?.map((item: string) => { return { id: +item } }) || [];
             const id = user.id;
             const userUpdate = {
                 id,
                 name,
                 email,
-                age: +age,
+                age: age ? parseInt(age) : 0,
                 gender,
                 address,
-                salary,
-                level,
+                phone,
+                salary: salary ? parseInt(salary) : 0,
+                level: level || null,
                 skills: arrSkills
             };
             const res = await callUpdateUser(userUpdate);
             if (res && res.message) {
                 message.success("Cập nhật thông tin thành công!");
-                setUserInfo(values);
-                navigate("");
+                // Dispatch action để cập nhật Redux store
+                await dispatch(fetchAccount());
+                // Gọi callback onSuccess nếu có
+                if (props.onSuccess) {
+                    props.onSuccess();
+                }
             }
             else {
                 notification.error({
@@ -178,265 +449,234 @@ const UserUpdateInfo = () => {
         }
     };
 
-    // Handle reset
-    const handleCancel = () => {
-        form.resetFields();
-    };
-
     return (
-        <ProForm
-            form={form}
-            onFinish={submitUserInfo} // Form submission handler
-            initialValues={{
-                ...userInfo,
-                skills: userInfo?.skills?.map((item: any) => item.id.toString()),
-            }}
-            submitter={{
-                searchConfig: {
-                    submitText: "Cập nhật", // Set submit button text
-                    resetText: "Hủy", // Change reset button text to "Hủy"
-                },
-                onReset: handleCancel, // Reset form when cancel is clicked
-            }}
-        >
-            {/* Họ tên */}
-            <ProForm.Item
-                label="Họ tên"
-                name="name"
-                rules={[{ required: true, message: "Họ tên không được để trống!" }]}
+        <div style={{ padding: '0 16px' }}>
+            <ProForm
+                form={form}
+                onFinish={submitUserInfo}
+                initialValues={{}}
+                submitter={{
+                    searchConfig: {
+                        submitText: "Cập nhật thông tin",
+                    },
+                    render: (props, doms) => {
+                        return (
+                            <div style={{ 
+                                textAlign: 'left', 
+                                marginTop: '24px',
+                                paddingTop: '16px',
+                                borderTop: '1px solid #f0f0f0'
+                            }}>
+                                <Button 
+                                    type="primary" 
+                                    size="large"
+                                    onClick={() => props.form?.submit()}
+                                    style={{ 
+                                        minWidth: '120px',
+                                        height: '40px',
+                                        fontSize: '16px'
+                                    }}
+                                >
+                                    Cập nhật thông tin
+                                </Button>
+                            </div>
+                        );
+                    }
+                }}
+                layout="vertical"
             >
-                <Input placeholder="Nhập họ tên" />
-            </ProForm.Item>
-
-            {/* Email */}
-            <ProForm.Item
-                label="Email"
-                name="email"
-                rules={[{ required: true }]}
-            >
-                <Input disabled />
-            </ProForm.Item>
-
-            {/* Tuổi */}
-            <ProForm.Item
-                label="Tuổi"
-                name="age"
-                rules={[
-                    { required: true, message: "Tuổi không được để trống!" },
-                    { pattern: /^[0-9]+$/, message: "Chỉ được nhập số" }
-                ]}
-            >
-                <Input type="number" placeholder="Nhập tuổi" />
-            </ProForm.Item>
-
-            {/* Giới tính */}
-            <ProForm.Item
-                label="Giới tính"
-                name="gender"
-                rules={[{ required: true, message: "Giới tính không được để trống!" }]}
-            >
-                <Select
-                    options={[
-                        { label: "Nam", value: "MALE" },
-                        { label: "Nữ", value: "FEMALE" },
-                        { label: "Khác", value: "OTHER" },
-                    ]}
-                    placeholder="Chọn giới tính"
-                />
-            </ProForm.Item>
-
-            {/* Địa chỉ */}
-            <ProForm.Item
-                label="Địa chỉ"
-                name="address"
-                rules={[{ required: true, message: "Địa chỉ không được để trống!" }]}
-            >
-                <Input placeholder="Nhập địa chỉ" />
-            </ProForm.Item>
-
-            {/* Lương */}
-            <ProForm.Item
-                label="Lương"
-                name="salary"
-                rules={[
-                    { required: true, message: "Lương không được để trống!" },
-                    { pattern: /^[0-9]+$/, message: "Chỉ được nhập số" }
-                ]}
-            >
-                <Input type="number" placeholder="Nhập lương" />
-            </ProForm.Item>
-
-            {/* Cấp bậc */}
-            <ProForm.Item
-                label="Cấp bậc"
-                name="level"
-                rules={[{ required: true, message: "Cấp bậc không được để trống!" }]}
-            >
-                <Select
-                    options={[
-                        { label: "JUNIOR", value: "JUNIOR" },
-                        { label: "MIDDLE", value: "MIDDLE" },
-                        { label: "SENIOR", value: "SENIOR" },
-                        { label: "INTERN", value: "INTERN" },
-                        { label: "FRESHER", value: "FRESHER" },
-                    ]}
-                    placeholder="Chọn cấp bậc"
-                />
-            </ProForm.Item>
-
-            {/* Kỹ năng */}
-            <ProForm.Item
-                label="Kỹ năng"
-                name="skills"
-                rules={[{ required: true, message: "Vui lòng chọn ít nhất 1 kỹ năng!" }]}
-            >
-                <Select
-                    mode="multiple"
-                    allowClear
-                    suffixIcon={null}
-                    style={{ width: "100%" }}
-                    placeholder={<>Tìm theo kỹ năng...</>}
-                    optionLabelProp="label"
-                    options={optionsSkills}
-                />
-            </ProForm.Item>
-        </ProForm>
+                <Row gutter={[16, 8]}>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="name" 
+                            label="Họ tên"
+                            rules={[
+                                { required: true, message: 'Vui lòng nhập họ tên!' },
+                                { min: 2, message: 'Họ tên phải có ít nhất 2 ký tự!' },
+                                { max: 50, message: 'Họ tên không được quá 50 ký tự!' }
+                            ]}
+                        >
+                            <Input placeholder="Nhập họ tên" />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="email" 
+                            label="Email"
+                            rules={[
+                                { required: true, message: 'Vui lòng nhập email!' },
+                                { type: 'email', message: 'Email không đúng định dạng!' }
+                            ]}
+                        >
+                            <Input disabled placeholder="Email không thể thay đổi" />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="age" 
+                            label="Tuổi"
+                            rules={[
+                                {
+                                    validator: (_, value) => {
+                                        if (value === undefined || value === null || value === '') {
+                                            return Promise.reject(new Error('Vui lòng nhập tuổi!'));
+                                        }
+                                        const strValue = String(value);
+                                        if (strValue.includes('+') || strValue.includes('-')) {
+                                            return Promise.reject(new Error('Tuổi không được chứa dấu + hoặc -!'));
+                                        }
+                                        if (!/^\d+$/.test(strValue)) {
+                                            return Promise.reject(new Error('Tuổi chỉ được chứa số!'));
+                                        }
+                                        const numValue = Number(value);
+                                        if (isNaN(numValue)) {
+                                            return Promise.reject(new Error('Tuổi phải là số!'));
+                                        }
+                                        if (!Number.isInteger(numValue)) {
+                                            return Promise.reject(new Error('Tuổi phải là số nguyên!'));
+                                        }
+                                        if (numValue < 16) {
+                                            return Promise.reject(new Error('Tuổi phải từ 16 trở lên!'));
+                                        }
+                                        if (numValue > 100) {
+                                            return Promise.reject(new Error('Tuổi không được quá 100!'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
+                        >
+                            <Input placeholder="Nhập tuổi" />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="gender" 
+                            label="Giới tính"
+                            rules={[
+                                { required: true, message: 'Vui lòng chọn giới tính!' }
+                            ]}
+                        >
+                            <Select 
+                                placeholder="Chọn giới tính"
+                                allowClear
+                                options={[{ label: 'Nam', value: 'MALE' }, { label: 'Nữ', value: 'FEMALE' }]} 
+                            />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="address" 
+                            label="Địa chỉ"
+                            rules={[
+                                { required: true, message: 'Vui lòng nhập địa chỉ!' },
+                                { min: 5, message: 'Địa chỉ phải có ít nhất 5 ký tự!' },
+                                { max: 100, message: 'Địa chỉ không được quá 100 ký tự!' }
+                            ]}
+                        >
+                            <Input placeholder="Nhập địa chỉ" />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="phone" 
+                            label="Số điện thoại"
+                            rules={[
+                                { required: false },
+                                { 
+                                    pattern: /^[0-9+\-\s()]*$/, 
+                                    message: 'Số điện thoại chỉ được chứa số, dấu +, -, khoảng trắng và dấu ngoặc!' 
+                                },
+                                { max: 20, message: 'Số điện thoại không được quá 20 ký tự!' }
+                            ]}
+                        >
+                            <Input placeholder="Nhập số điện thoại" />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="salary" 
+                            label="Mức lương mong muốn"
+                            rules={[
+                                {
+                                    validator: (_, value) => {
+                                        if (value === undefined || value === null || value === '') {
+                                            return Promise.resolve();
+                                        }
+                                        const strValue = String(value);
+                                        if (strValue.includes('+') || strValue.includes('-')) {
+                                            return Promise.reject(new Error('Mức lương không được chứa dấu + hoặc -!'));
+                                        }
+                                        if (!/^\d+$/.test(strValue)) {
+                                            return Promise.reject(new Error('Mức lương chỉ được chứa số!'));
+                                        }
+                                        const numValue = Number(value);
+                                        if (isNaN(numValue)) {
+                                            return Promise.reject(new Error('Mức lương phải là số!'));
+                                        }
+                                        if (!Number.isInteger(numValue)) {
+                                            return Promise.reject(new Error('Mức lương phải là số nguyên!'));
+                                        }
+                                        if (numValue < 0) {
+                                            return Promise.reject(new Error('Mức lương không được âm!'));
+                                        }
+                                        if (numValue > 1000000000) {
+                                            return Promise.reject(new Error('Mức lương không được quá 1 tỷ!'));
+                                        }
+                                        return Promise.resolve();
+                                    }
+                                }
+                            ]}
+                        >
+                            <Input placeholder="Nhập mức lương (VND)" />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={12}>
+                        <ProForm.Item 
+                            name="level" 
+                            label="Cấp độ"
+                        >
+                            <Select 
+                                placeholder="Chọn cấp độ"
+                                allowClear
+                                options={[
+                                    { label: 'Intern', value: 'INTERN' },
+                                    { label: 'Fresher', value: 'FRESHER' },
+                                    { label: 'Junior', value: 'JUNIOR' },
+                                    { label: 'Middle', value: 'MIDDLE' },
+                                    { label: 'Senior', value: 'SENIOR' },
+                                ]} 
+                            />
+                        </ProForm.Item>
+                    </Col>
+                    <Col span={24}>
+                        <ProForm.Item 
+                            name="skills" 
+                            label="Kỹ năng"
+                            rules={[
+                                { type: 'array', max: 10, message: 'Không được chọn quá 10 kỹ năng!' }
+                            ]}
+                        >
+                            <Select 
+                                mode="multiple" 
+                                options={optionsSkills}
+                                placeholder="Chọn kỹ năng (tối đa 10)"
+                                showSearch
+                                allowClear
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                            />
+                        </ProForm.Item>
+                    </Col>
+                </Row>
+            </ProForm>
+        </div>
     );
 };
 
-// const JobByEmail = (props: any) => {
-//     const [form] = Form.useForm();
-//     const user = useAppSelector(state => state.account.user);
-//     const [optionsSkills, setOptionsSkills] = useState<{
-//         label: string;
-//         value: string;
-//     }[]>([]);
-
-//     const [subscriber, setSubscriber] = useState<ISubscribers | null>(null);
-
-//     useEffect(() => {
-//         const init = async () => {
-//             await fetchSkill();
-//             const res = await callGetSubscriberSkills();
-//             if (res && res.data) {
-//                 setSubscriber(res.data);
-//                 const d = res.data.skills;
-//                 const arr = d.map((item: any) => {
-//                     return {
-//                         label: item.name as string,
-//                         value: item.id + "" as string
-//                     }
-//                 });
-//                 form.setFieldValue("skills", arr);
-//             }
-//         }
-//         init();
-//         fetchSkill();
-//     }, [])
-
-//     const fetchSkill = async () => {
-//         let query = `page=1&size=100&sort=createdAt,desc`;
-
-//         const res = await callFetchAllSkill(query);
-//         if (res && res.data) {
-//             const arr = res?.data?.result?.map(item => {
-//                 return {
-//                     label: item.name as string,
-//                     value: item.id + "" as string
-//                 }
-//             }) ?? [];
-//             setOptionsSkills(arr);
-//         }
-//     }
-
-//     const onFinish = async (values: any) => {
-//         const { skills } = values;
-
-//         const arr = skills?.map((item: any) => {
-//             if (item?.id) return { id: item.id };
-//             return { id: item }
-//         });
-
-//         if (!subscriber?.id) {
-//             //create subscriber
-//             const data = {
-//                 email: user.email,
-//                 name: user.name,
-//                 skills: arr
-//             }
-
-//             const res = await callCreateSubscriber(data);
-//             if (res.data) {
-//                 message.success("Cập nhật thông tin thành công");
-//                 setSubscriber(res.data);
-//             } else {
-//                 notification.error({
-//                     message: 'Có lỗi xảy ra',
-//                     description: res.message
-//                 });
-//             }
-
-
-//         } else {
-//             //update subscriber
-//             const res = await callUpdateSubscriber({
-//                 id: subscriber?.id,
-//                 skills: arr
-//             });
-//             if (res.data) {
-//                 message.success("Cập nhật thông tin thành công");
-//                 setSubscriber(res.data);
-//             } else {
-//                 notification.error({
-//                     message: 'Có lỗi xảy ra',
-//                     description: res.message
-//                 });
-//             }
-//         }
-
-
-//     }
-
-//     return (
-//         <>
-//             <Form
-//                 onFinish={onFinish}
-//                 form={form}
-//             >
-//                 <Row gutter={[20, 20]}>
-//                     <Col span={24}>
-//                         <Form.Item
-//                             label={"Kỹ năng"}
-//                             name={"skills"}
-//                             rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 skill!' }]}
-
-//                         >
-//                             <Select
-//                                 mode="multiple"
-//                                 allowClear
-//                                 suffixIcon={null}
-//                                 style={{ width: '100%' }}
-//                                 placeholder={
-//                                     <>
-//                                         <MonitorOutlined /> Tìm theo kỹ năng...
-//                                     </>
-//                                 }
-//                                 optionLabelProp="label"
-//                                 options={optionsSkills}
-//                             />
-//                         </Form.Item>
-//                     </Col>
-//                     <Col span={24}>
-//                         <Button onClick={() => form.submit()}>Cập nhật</Button>
-//                     </Col>
-//                 </Row>
-//             </Form>
-//         </>
-//     )
-// }
-
 const ManageAccount = (props: IProps) => {
-    const { open, onClose } = props;
+    const { open, onClose, onSuccess } = props;
 
     const onChange = (key: string) => {
         // console.log(key);
@@ -448,23 +688,12 @@ const ManageAccount = (props: IProps) => {
             label: `Rải CV`,
             children: <UserResume />,
         },
-        // {
-        //     key: 'email-by-skills',
-        //     label: `Nhận Jobs qua Email`,
-        //     children: <JobByEmail />,
-        // },
         {
             key: 'user-update-info',
             label: `Cập nhật thông tin`,
-            children: <UserUpdateInfo />,
-        },
-        {
-            key: 'user-password',
-            label: `Thay đổi mật khẩu`,
-            children: `//todo`,
+            children: <UserUpdateInfo open={open} onSuccess={onSuccess} />,
         },
     ];
-
 
     return (
         <>
@@ -477,7 +706,6 @@ const ManageAccount = (props: IProps) => {
                 destroyOnClose={true}
                 width={isMobile ? "100%" : "1000px"}
             >
-
                 <div style={{ minHeight: 400 }}>
                     <Tabs
                         defaultActiveKey="user-resume"
@@ -485,7 +713,6 @@ const ManageAccount = (props: IProps) => {
                         onChange={onChange}
                     />
                 </div>
-
             </Modal>
         </>
     )

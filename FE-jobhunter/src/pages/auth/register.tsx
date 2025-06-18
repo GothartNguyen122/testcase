@@ -1,54 +1,18 @@
-import { Button, Divider, Form, Input, Row, Select, message, notification, Col } from 'antd';
-import { useState, useEffect } from 'react';
+import { Button, Divider, Form, Input, message, notification } from 'antd';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { callRegister, callFetchAllSkill } from 'config/api';
+import { callRegister } from 'config/api';
 import styles from 'styles/auth.module.scss';
-import { IUser, ISkill } from '@/types/backend';
-import { MonitorOutlined } from "@ant-design/icons";
-import { ProFormSelect, ProFormDigit } from "@ant-design/pro-components";
-
-const { Option } = Select;
-
-interface ISkillSelect {
-    label: string;
-    value: string;
-    key?: string;
-}
+import { IUser } from '@/types/backend';
 
 const RegisterPage = () => {
     const navigate = useNavigate();
     const [isSubmit, setIsSubmit] = useState(false);
 
-    const [skills, setSkills] = useState<ISkillSelect[]>([]);
-
-    useEffect(() => {
-        const init = async () => {
-            const temp = await fetchSkillList();
-            setSkills(temp);
-        }
-        init(); // Gọi hàm init
-    }, []);
-
-    async function fetchSkillList(): Promise<ISkillSelect[]> {
-        const res = await callFetchAllSkill(`page=1&size=100`);
-        if (res && res.data) {
-            const list = res.data.result;
-            const temp = list.map(item => {
-                return {
-                    label: item.name as string,
-                    value: `${item.id}` as string
-                }
-            })
-            return temp;
-        } else return [];
-    }
-
-
     const onFinish = async (values: any) => {
-        const { name, email, password, age, gender, address, salary, level, skills } = values;
-        const arrSkills = values?.skills?.map((item: string) => { return { id: +item } })
+        const { name, email, password, age } = values;
         setIsSubmit(true);
-        const res = await callRegister(name, email, password as string, +age, gender, address, salary, level, arrSkills);
+        const res = await callRegister(name, email, password as string, +age);
         setIsSubmit(false);
         if (res?.data?.id) {
             message.success('Đăng ký tài khoản thành công!');
@@ -63,10 +27,8 @@ const RegisterPage = () => {
         }
     };
 
-
     return (
         <div className={styles["register-page"]} >
-
             <main className={styles.main} >
                 <div className={styles.container} >
                     <section className={styles.wrapper} >
@@ -76,136 +38,60 @@ const RegisterPage = () => {
                         </div>
                         < Form<IUser>
                             name="basic"
-                            // style={{ maxWidth: 600, margin: '0 auto' }}
                             onFinish={onFinish}
                             autoComplete="off"
                         >
                             <Form.Item
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
                                 label="Họ tên"
                                 name="name"
-                                rules={[{ required: true, message: 'Họ tên không được để trống!' }]}
+                                rules={[
+                                    { required: true, message: 'Họ tên không được để trống!' },
+                                    { min: 2, message: 'Họ tên phải có ít nhất 2 ký tự!' },
+                                    { max: 50, message: 'Họ tên không được quá 50 ký tự!' }
+                                ]}
                             >
-                                <Input />
+                                <Input placeholder="Nhập họ tên" />
                             </Form.Item>
 
-
                             <Form.Item
-                                labelCol={{ span: 24 }
-                                } //whole column
+                                labelCol={{ span: 24 }}
                                 label="Email"
                                 name="email"
-                                rules={[{ required: true, message: 'Email không được để trống!' }]}
+                                rules={[
+                                    { required: true, message: 'Email không được để trống!' },
+                                    { type: 'email', message: 'Email không đúng định dạng!' }
+                                ]}
                             >
-                                <Input type='email' />
+                                <Input type='email' placeholder="Nhập email" />
                             </Form.Item>
 
                             <Form.Item
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
                                 label="Mật khẩu"
                                 name="password"
-                                rules={[{ required: true, message: 'Mật khẩu không được để trống!' }]}
+                                rules={[
+                                    { required: true, message: 'Mật khẩu không được để trống!' },
+                                    { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự!' }
+                                ]}
                             >
-                                <Input.Password />
+                                <Input.Password placeholder="Nhập mật khẩu" />
                             </Form.Item>
+
                             <Form.Item
-                                labelCol={{ span: 24 }} //whole column
+                                labelCol={{ span: 24 }}
                                 label="Tuổi"
                                 name="age"
-                                rules={[{ required: true, message: 'Tuổi không được để trống!' }]}
+                                rules={[
+                                    { required: true, message: 'Tuổi không được để trống!' },
+                                    { type: 'number', min: 16, max: 100, message: 'Tuổi phải từ 16 đến 100!' }
+                                ]}
                             >
-                                <Input type='number' />
+                                <Input type='number' placeholder="Nhập tuổi" />
                             </Form.Item>
 
-
-                            <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                name="gender"
-                                label="Giới tính"
-                                rules={[{ required: true, message: 'Giới tính không được để trống!' }]}
-                            >
-                                <Select
-                                    // placeholder="Select a option and change input text above"
-                                    // onChange={onGenderChange}
-                                    allowClear
-                                >
-                                    <Option value="MALE">Nam</Option>
-                                    <Option value="FEMALE">Nữ</Option>
-                                    <Option value="OTHER">Khác</Option>
-                                </Select>
-                            </Form.Item>
-
-
-                            <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                label="Địa chỉ"
-                                name="address"
-                                rules={[{ required: true, message: 'Địa chỉ không được để trống!' }]}
-                            >
-                                <Input />
-                            </Form.Item>
-
-
-                            <Form.Item
-                                labelCol={{ span: 24 }}
-                                label="Mức lương mong muốn"
-                                name="salary"
-                                rules={[{ required: true, message: 'Vui lòng không bỏ trống' }]}
-                            >
-                                <ProFormDigit
-                                    placeholder="Nhập mức lương"
-                                    fieldProps={{
-                                        addonAfter: " đ",
-                                        formatter: (value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','),
-                                        parser: (value) => +(value || '').replace(/\$\s?|(,*)/g, '')
-                                    }}
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                labelCol={{ span: 24 }} //whole column
-                                label={"Kỹ năng hiện có"}
-                                name={"skills"}
-                                rules={[{ required: true, message: 'Vui lòng chọn ít nhất 1 skill!' }]}
-
-                            >
-                                <Select
-                                    mode="multiple"
-                                    allowClear
-                                    suffixIcon={null}
-                                    style={{ width: '100%' }}
-                                    placeholder={
-                                        <>
-                                            <MonitorOutlined /> Tìm theo kỹ năng...
-                                        </>
-                                    }
-                                    optionLabelProp="label"
-                                    options={skills}
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                labelCol={{ span: 24 }}
-                                name="level"
-                                label="Trình độ">
-                                <ProFormSelect
-
-                                    valueEnum={{
-                                        INTERN: 'INTERN',
-                                        FRESHER: 'FRESHER',
-                                        JUNIOR: 'JUNIOR',
-                                        MIDDLE: 'MIDDLE',
-                                        SENIOR: 'SENIOR',
-                                    }}
-                                    placeholder="Please select a level"
-                                    rules={[{ required: true, message: 'Vui lòng chọn level!' }]}
-                                />
-                            </Form.Item>
-
-                            < Form.Item
-                            // wrapperCol={{ offset: 6, span: 16 }}
-                            >
-                                <Button type="primary" htmlType="submit" loading={isSubmit} >
+                            < Form.Item>
+                                <Button type="primary" htmlType="submit" loading={isSubmit} style={{ width: '100%', height: '40px' }}>
                                     Đăng ký
                                 </Button>
                             </Form.Item>

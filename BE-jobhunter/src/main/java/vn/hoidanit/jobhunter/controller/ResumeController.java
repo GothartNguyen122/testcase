@@ -32,6 +32,7 @@ import vn.hoidanit.jobhunter.util.annotation.ApiMessage;
 import vn.hoidanit.jobhunter.util.error.IdInvalidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import vn.hoidanit.jobhunter.util.constant.ResumeStateEnum;
 
 @RestController
 @RequestMapping("/api/v1")
@@ -85,11 +86,50 @@ public class ResumeController {
     @DeleteMapping("/resumes/{id}")
     @ApiMessage("Delete a resume by id")
     public ResponseEntity<Void> delete(@PathVariable("id") long id) throws IdInvalidException {
+        System.out.println("=== DELETE RESUME DEBUG ===");
+        System.out.println("Resume ID: " + id);
+
         Optional<Resume> reqResumeOptional = this.resumeService.fetchById(id);
         if (reqResumeOptional.isEmpty()) {
+            System.out.println("Resume not found with ID: " + id);
             throw new IdInvalidException("Resume với id = " + id + " không tồn tại");
         }
 
+        Resume resume = reqResumeOptional.get();
+        System.out.println("Found resume - Email: " + resume.getEmail() + ", Status: " + resume.getStatus());
+
+        // Kiểm tra quyền sở hữu - chỉ cho phép user xóa CV của chính mình
+        String currentUserEmail = SecurityUtil.getCurrentUserLogin().orElse("");
+        System.out.println("Current user email: " + currentUserEmail);
+        System.out.println("Resume email: " + resume.getEmail());
+        System.out.println("Email match: " + currentUserEmail.equals(resume.getEmail()));
+
+        if (currentUserEmail.isEmpty()) {
+            System.out.println("Current user email is empty");
+            throw new IdInvalidException("Không thể xác định người dùng hiện tại");
+        }
+
+        if (!currentUserEmail.equals(resume.getEmail())) {
+            System.out.println("Permission denied - Email mismatch");
+            throw new IdInvalidException("Bạn không có quyền xóa CV này");
+        }
+
+        // Kiểm tra trạng thái - chỉ cho phép xóa CV có trạng thái PENDING
+        System.out.println("Status check - Expected: PENDING, Actual: " + resume.getStatus());
+        System.out.println("Status equals: " + (resume.getStatus() == ResumeStateEnum.PENDING));
+
+        if (resume.getStatus() == null) {
+            System.out.println("Resume status is null");
+            throw new IdInvalidException("Trạng thái CV không hợp lệ");
+        }
+
+        // So sánh enum thay vì string
+        if (resume.getStatus() != ResumeStateEnum.PENDING) {
+            System.out.println("Status check failed - Current status: " + resume.getStatus());
+            throw new IdInvalidException("Chỉ có thể rút CV với trạng thái 'Chờ xử lý'");
+        }
+
+        System.out.println("All checks passed - Deleting resume");
         this.resumeService.delete(id);
         return ResponseEntity.ok().body(null);
     }
@@ -147,5 +187,12 @@ public class ResumeController {
     public ResponseEntity<ResultPaginationDTO> fetchResumeByUser(Pageable pageable) {
 
         return ResponseEntity.ok().body(this.resumeService.fetchResumeByUser(pageable));
+    }
+
+    @GetMapping("/resumes/check-applied/{jobId}")
+    @ApiMessage("Check if user has applied to job")
+    public ResponseEntity<Boolean> checkUserAppliedToJob(@PathVariable("jobId") long jobId) {
+        boolean hasApplied = this.resumeService.hasUserAppliedToJob(jobId);
+        return ResponseEntity.ok().body(hasApplied);
     }
 }

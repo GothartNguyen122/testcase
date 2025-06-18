@@ -169,4 +169,21 @@ public class ResumeService {
 
         return rs;
     }
+
+    public boolean hasUserAppliedToJob(long jobId) {
+        String email = SecurityUtil.getCurrentUserLogin().isPresent() == true
+                ? SecurityUtil.getCurrentUserLogin().get()
+                : "";
+
+        if (email.isEmpty()) {
+            return false;
+        }
+
+        User user = this.userRepository.findByEmail(email);
+        if (user == null) {
+            return false;
+        }
+
+        return this.resumeRepository.existsByUserAndJobId(user, jobId);
+    }
 }

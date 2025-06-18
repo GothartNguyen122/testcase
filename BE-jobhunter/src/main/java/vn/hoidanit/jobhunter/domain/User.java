@@ -52,6 +52,8 @@ public class User {
 
     private String address;
 
+    private String phone;
+
     private double salary;
 
     @Enumerated(EnumType.STRING)

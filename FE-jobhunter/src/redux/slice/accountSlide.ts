@@ -15,22 +15,7 @@ interface IState {
     isLoading: boolean;
     isRefreshToken: boolean;
     errorRefreshToken: string;
-    user: {
-        id: string;
-        email: string;
-        name: string;
-        role: {
-            id?: string;
-            name?: string;
-            permissions?: {
-                id: string;
-                name: string;
-                apiPath: string;
-                method: string;
-                module: string;
-            }[]
-        }
-    };
+    user: any;
     activeMenu: string;
 }
 
@@ -39,17 +24,7 @@ const initialState: IState = {
     isLoading: true,
     isRefreshToken: false,
     errorRefreshToken: "",
-    user: {
-        id: "",
-        email: "",
-        name: "",
-        role: {
-            id: "",
-            name: "",
-            permissions: [],
-        },
-    },
-
+    user: {},
     activeMenu: 'home'
 };
 
@@ -107,12 +82,7 @@ export const accountSlide = createSlice({
             if (action.payload) {
                 state.isAuthenticated = true;
                 state.isLoading = false;
-                state.user.id = action?.payload?.user?.id;
-                state.user.email = action.payload.user?.email;
-                state.user.name = action.payload.user?.name;
-                state.user.role = action?.payload?.user?.role;
-                if (!action?.payload?.user?.role) state.user.role = {};
-                state.user.role.permissions = action?.payload?.user?.role?.permissions ?? [];
+                state.user = action.payload;
             }
         })
 

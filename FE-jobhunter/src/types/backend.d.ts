@@ -62,8 +62,6 @@ export interface ISkill {
     updatedAt?: string;
 }
 
-
-
 export interface IUser {
     id?: string;
     name: string;
@@ -123,12 +121,12 @@ export interface IResume {
     userId: string;
     url: string;
     status: string;
-    companyId: string | {
+    companyName: string;
+    job: {
         id: string;
         name: string;
-        logo: string;
     };
-    jobId: string | {
+    user: {
         id: string;
         name: string;
     };

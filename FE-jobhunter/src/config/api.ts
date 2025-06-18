@@ -5,9 +5,8 @@ import axios from 'config/axios-customize';
  *
 Module Auth
  */
-export const callRegister = (name: string, email: string, password: string, age: number, gender: string, address: string, salary: number,
-    level: string, skills: ISkill[]) => {
-    return axios.post<IBackendRes<IUser>>('/api/v1/auth/register', { name, email, password, age, gender, address, salary, level, skills })
+export const callRegister = (name: string, email: string, password: string, age: number) => {
+    return axios.post<IBackendRes<IUser>>('/api/v1/auth/register', { name, email, password, age })
 }
 
 export const callLogin = (username: string, password: string) => {
@@ -137,8 +136,8 @@ export const callFetchJobById = (id: string) => {
     return axios.get<IBackendRes<IJob>>(`/api/v1/jobs/${id}`);
 }
 
-export const callFetchJobCluster = (query: string) => {
-    return axios.get<IBackendRes<IModelPaginate<IJob>>>(`/api/v1/job-cluster/jobs?${query}`);
+export const callUserSearchAndFilterJobs = (query: string) => {
+    return axios.get<IBackendRes<IModelPaginate<IJob>>>(`/api/v1/jobs/user-search?${query}`);
 }
 
 /**
@@ -174,8 +173,12 @@ export const callFetchResumeById = (id: string) => {
     return axios.get<IBackendRes<IResume>>(`/api/v1/resumes/${id}`);
 }
 
-export const callFetchResumeByUser = () => {
-    return axios.post<IBackendRes<IModelPaginate<IResume>>>(`/api/v1/resumes/by-user`);
+export const callFetchResumeByUser = (query: string = 'page=1&size=10') => {
+    return axios.post<IBackendRes<IModelPaginate<IResume>>>(`/api/v1/resumes/by-user?${query}`)
+}
+
+export const callCheckUserAppliedToJob = (jobId: number) => {
+    return axios.get<IBackendRes<boolean>>(`/api/v1/resumes/check-applied/${jobId}`)
 }
 
 /**

@@ -25,6 +25,14 @@ const Header = (props: any) => {
 
     const [openMangeAccount, setOpenManageAccount] = useState<boolean>(false);
 
+    // Debug: Log user role and permissions
+    useEffect(() => {
+        console.log('User:', user);
+        console.log('User role:', user.role);
+        console.log('User permissions:', user.role?.permissions);
+        console.log('Can access admin:', user.role?.permissions?.length || user.role?.name === 'ADMIN' || user.role?.name === 'SUPER_ADMIN');
+    }, [user]);
+
     useEffect(() => {
         setCurrent(location.pathname);
     }, [location])
@@ -71,7 +79,7 @@ const Header = (props: any) => {
             key: 'manage-account',
             icon: <ContactsOutlined />
         },
-        ...(user.role?.permissions?.length ? [{
+        ...(user.role?.permissions?.length || user.role?.name === 'ADMIN' || user.role?.name === 'SUPER_ADMIN' ? [{
             label: <Link
                 to={"/admin"}
             >Trang Quản Trị</Link>,

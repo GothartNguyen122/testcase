@@ -18,6 +18,14 @@ export const SKILLS_LIST =
         { label: "Fullstack", value: "FULLSTACK" }
     ];
 
+export const LEVEL_LIST = [
+    { label: "Intern", value: "INTERN" },
+    { label: "Fresher", value: "FRESHER" },
+    { label: "Junior", value: "JUNIOR" },
+    { label: "Middle", value: "MIDDLE" },
+    { label: "Senior", value: "SENIOR" }
+];
+
 export const LOCATION_LIST =
     [
         { label: "Hà Nội", value: "HANOI" },

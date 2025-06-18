@@ -74,7 +74,6 @@ public class Job {
     @OneToMany(mappedBy = "job", fetch = FetchType.LAZY)
     @JsonIgnore
     List<Resume> resumes;
-    private int cluster;
 
     @PrePersist
     public void handleBeforeCreate() {

@@ -38,34 +38,36 @@ const LayoutAdmin = () => {
 
     useEffect(() => {
         const ACL_ENABLE = import.meta.env.VITE_ACL_ENABLE;
-        if (permissions?.length || ACL_ENABLE === 'false') {
+        const isSuperAdmin = user?.role?.name === 'SUPER_ADMIN';
+        
+        if (permissions?.length || ACL_ENABLE === 'false' || isSuperAdmin) {
 
-            const viewCompany = permissions?.find(item =>
+            const viewCompany = isSuperAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.COMPANIES.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.COMPANIES.GET_PAGINATE.method
             )
 
-            const viewUser = permissions?.find(item =>
+            const viewUser = isSuperAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.USERS.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.USERS.GET_PAGINATE.method
             )
 
-            const viewJob = permissions?.find(item =>
+            const viewJob = isSuperAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.JOBS.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.JOBS.GET_PAGINATE.method
             )
 
-            const viewResume = permissions?.find(item =>
+            const viewResume = isSuperAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.RESUMES.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.RESUMES.GET_PAGINATE.method
             )
 
-            const viewRole = permissions?.find(item =>
+            const viewRole = isSuperAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.ROLES.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.ROLES.GET_PAGINATE.method
             )
 
-            const viewPermission = permissions?.find(item =>
+            const viewPermission = isSuperAdmin || permissions?.find(item =>
                 item.apiPath === ALL_PERMISSIONS.PERMISSIONS.GET_PAGINATE.apiPath
                 && item.method === ALL_PERMISSIONS.USERS.GET_PAGINATE.method
             )
@@ -76,34 +78,34 @@ const LayoutAdmin = () => {
                     key: '/admin',
                     icon: <AppstoreOutlined />
                 },
-                ...(viewCompany || ACL_ENABLE === 'false' ? [{
+                ...(viewCompany || ACL_ENABLE === 'false' || isSuperAdmin ? [{
                     label: <Link to='/admin/company'>Company</Link>,
                     key: '/admin/company',
                     icon: <BankOutlined />,
                 }] : []),
 
-                ...(viewUser || ACL_ENABLE === 'false' ? [{
+                ...(viewUser || ACL_ENABLE === 'false' || isSuperAdmin ? [{
                     label: <Link to='/admin/user'>User</Link>,
                     key: '/admin/user',
                     icon: <UserOutlined />
                 }] : []),
-                ...(viewJob || ACL_ENABLE === 'false' ? [{
+                ...(viewJob || ACL_ENABLE === 'false' || isSuperAdmin ? [{
                     label: <Link to='/admin/job'>Job</Link>,
                     key: '/admin/job',
                     icon: <ScheduleOutlined />
                 }] : []),
 
-                ...(viewResume || ACL_ENABLE === 'false' ? [{
+                ...(viewResume || ACL_ENABLE === 'false' || isSuperAdmin ? [{
                     label: <Link to='/admin/resume'>Resume</Link>,
                     key: '/admin/resume',
                     icon: <AliwangwangOutlined />
                 }] : []),
-                ...(viewPermission || ACL_ENABLE === 'false' ? [{
+                ...(viewPermission || ACL_ENABLE === 'false' || isSuperAdmin ? [{
                     label: <Link to='/admin/permission'>Permission</Link>,
                     key: '/admin/permission',
                     icon: <ApiOutlined />
                 }] : []),
-                ...(viewRole || ACL_ENABLE === 'false' ? [{
+                ...(viewRole || ACL_ENABLE === 'false' || isSuperAdmin ? [{
                     label: <Link to='/admin/role'>Role</Link>,
                     key: '/admin/role',
                     icon: <ExceptionOutlined />
@@ -115,7 +117,7 @@ const LayoutAdmin = () => {
 
             setMenuItems(full);
         }
-    }, [permissions])
+    }, [permissions, user?.role?.name])
     useEffect(() => {
         setActiveMenu(location.pathname)
     }, [location])

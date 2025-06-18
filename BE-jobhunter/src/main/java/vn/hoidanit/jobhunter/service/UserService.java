@@ -96,6 +96,7 @@ public class UserService {
             currentUser.setGender(reqUser.getGender());
             currentUser.setAge(reqUser.getAge());
             currentUser.setName(reqUser.getName());
+            currentUser.setPhone(reqUser.getPhone());
 
             // check company
             if (reqUser.getCompany() != null) {
@@ -148,6 +149,7 @@ public class UserService {
         res.setCreatedAt(user.getCreatedAt());
         res.setGender(user.getGender());
         res.setAddress(user.getAddress());
+        res.setPhone(user.getPhone());
         res.setSalary(user.getSalary());
         res.setLevel(user.getLevel());
         if (user.getSkills() != null) {
@@ -180,6 +182,7 @@ public class UserService {
         res.setUpdatedAt(user.getUpdatedAt());
         res.setGender(user.getGender());
         res.setAddress(user.getAddress());
+        res.setPhone(user.getPhone());
         return res;
     }
 
@@ -203,10 +206,13 @@ public class UserService {
         res.setEmail(user.getEmail());
         res.setName(user.getName());
         res.setAge(user.getAge());
+        res.setSalary(user.getSalary());
+        res.setLevel(user.getLevel());
         res.setUpdatedAt(user.getUpdatedAt());
         res.setCreatedAt(user.getCreatedAt());
         res.setGender(user.getGender());
         res.setAddress(user.getAddress());
+        res.setPhone(user.getPhone());
         return res;
     }
 

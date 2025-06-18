@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import com.turkraft.springfilter.boot.Filter;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import vn.hoidanit.jobhunter.domain.Job;
 import vn.hoidanit.jobhunter.domain.response.ResultPaginationDTO;
@@ -33,12 +33,9 @@ import java.util.Collections;
 public class JobController {
 
     private final JobService jobService;
-    private final RestTemplate restTemplate;
-    private final String ClusterApi = "http://localhost:8000"; // URL của API phân cụm người dùng
 
-    public JobController(JobService jobService, RestTemplate restTemplate) {
+    public JobController(JobService jobService) {
         this.jobService = jobService;
-        this.restTemplate = restTemplate;
     }
 
     @PostMapping("/jobs")
@@ -46,14 +43,7 @@ public class JobController {
     public ResponseEntity<ResCreateJobDTO> create(@Valid @RequestBody Job job) {
         // Tạo mới job
         ResCreateJobDTO createdJob = this.jobService.create(job);
-
-        String apiUrl = String.format("%s/cluster", ClusterApi); // Địa chỉ API /cluster
-        ResponseEntity<Map> response = restTemplate.getForEntity(apiUrl, Map.class);
-        if (response.getStatusCode().is2xxSuccessful()) {
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdJob);
-        } else {
-            throw new RuntimeException("Failed to call /cluster API after creating job.");
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdJob);
     }
 
     @PutMapping("/jobs")
@@ -69,13 +59,7 @@ public class JobController {
         ResUpdateJobDTO updatedJob = this.jobService.update(job, currentJob.get());
 
         if (updatedJob != null) {
-            String apiUrl = String.format("%s/cluster", ClusterApi); // Địa chỉ API /cluster
-            ResponseEntity<Map> response = restTemplate.getForEntity(apiUrl, Map.class);
-            if (response.getStatusCode().is2xxSuccessful()) {
-                return ResponseEntity.status(HttpStatus.OK).body(updatedJob); // Trả về kết quả job đã được cập nhật
-            } else {
-                throw new RuntimeException("Failed to call /cluster API after updating job.");
-            }
+            return ResponseEntity.status(HttpStatus.OK).body(updatedJob);
         } else {
             // Nếu cập nhật không thành công, trả về lỗi
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -119,34 +103,18 @@ public class JobController {
         return ResponseEntity.ok().body(this.jobService.fetchAll(spec, pageable));
     }
 
-    @GetMapping("/job-cluster/jobs")
-    @ApiMessage("Get jobs by user cluster")
-    public ResponseEntity<ResultPaginationDTO> getJobsByCluster(
-            @RequestParam("userId") Long userId,
-            @Filter Specification<Job> spec,
-            Pageable pageable) throws IdInvalidException {
+    @GetMapping("/jobs/user-search")
+    @ApiMessage("User search and filter jobs")
+    public ResponseEntity<ResultPaginationDTO> userSearchAndFilterJobs(
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "skills", required = false) String skills,
+            @RequestParam(value = "minSalary", required = false) Double minSalary,
+            @RequestParam(value = "maxSalary", required = false) Double maxSalary,
+            @RequestParam(value = "level", required = false) String level,
+            Pageable pageable) {
 
-        // Gọi API phân cụm người dùng để lấy cluster của người dùng
-        String apiUrl = String.format("%s/predict-user-cluster/%d",
-                ClusterApi, userId);
-        ResponseEntity<Map> response = restTemplate.getForEntity(apiUrl, Map.class);
-
-        if (response.getStatusCode().is2xxSuccessful()) {
-            // Lấy cluster từ API trả về
-            int userCluster = (Integer) response.getBody().get("cluster");
-
-            // Tạo Specification để lọc công việc theo cluster
-            Specification<Job> clusterSpec = (root, query, criteriaBuilder) -> criteriaBuilder
-                    .equal(root.get("cluster"), userCluster);
-
-            // Kết hợp bộ lọc cluster với các bộ lọc khác (nếu có)
-            Specification<Job> combinedSpec = spec.and(clusterSpec);
-
-            // Truy vấn công việc theo cluster và phân trang
-            ResultPaginationDTO jobs = this.jobService.fetchAll(combinedSpec, pageable);
-            return ResponseEntity.ok().body(jobs);
-        } else {
-            throw new IdInvalidException("Failed to retrieve user cluster.");
-        }
+        return ResponseEntity.ok().body(this.jobService.userSearchAndFilter(
+                keyword, location, skills, minSalary, maxSalary, level, pageable));
     }
 }

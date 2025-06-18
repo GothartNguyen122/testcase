@@ -1,8 +1,8 @@
-import { callFetchJob } from '@/config/api';
+import { callFetchJob, callUserSearchAndFilterJobs } from '@/config/api';
 import { convertSlug, getLocationName } from '@/config/utils';
 import { IJob } from '@/types/backend';
-import { EnvironmentOutlined, ThunderboltOutlined } from '@ant-design/icons';
-import { Card, Col, Empty, Pagination, Row, Spin } from 'antd';
+import { EnvironmentOutlined, ThunderboltOutlined, CodeOutlined, TrophyOutlined } from '@ant-design/icons';
+import { Card, Col, Empty, Pagination, Row, Spin, Tag } from 'antd';
 import { useState, useEffect } from 'react';
 import { isMobile } from 'react-device-detect';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -39,6 +39,41 @@ const JobCard = (props: IProps) => {
 
     const fetchJob = async () => {
         setIsLoading(true)
+        
+        // Kiểm tra xem có search/filter parameters không
+        const queryKeyword = searchParams.get("keyword");
+        const queryCompanyName = searchParams.get("companyName");
+        const queryLocation = searchParams.get("location");
+        const querySkills = searchParams.get("skills");
+        const queryLevel = searchParams.get("level");
+        const queryMinSalary = searchParams.get("minSalary");
+        const queryMaxSalary = searchParams.get("maxSalary");
+
+        // Nếu có search/filter parameters, sử dụng API mới
+        if (queryKeyword || queryCompanyName || queryLocation || querySkills || 
+            queryLevel || queryMinSalary || queryMaxSalary) {
+            
+            let query = `page=${current}&size=${pageSize}`;
+            if (sortQuery) {
+                query += `&${sortQuery}`;
+            }
+
+            // Thêm các parameters vào query
+            if (queryKeyword) query += `&keyword=${encodeURIComponent(queryKeyword)}`;
+            if (queryCompanyName) query += `&companyName=${encodeURIComponent(queryCompanyName)}`;
+            if (queryLocation) query += `&location=${encodeURIComponent(queryLocation)}`;
+            if (querySkills) query += `&skills=${encodeURIComponent(querySkills)}`;
+            if (queryLevel) query += `&level=${encodeURIComponent(queryLevel)}`;
+            if (queryMinSalary) query += `&minSalary=${queryMinSalary}`;
+            if (queryMaxSalary) query += `&maxSalary=${queryMaxSalary}`;
+
+            const res = await callUserSearchAndFilterJobs(query);
+            if (res && res.data) {
+                setDisplayJob(res.data.result);
+                setTotal(res.data.meta.total)
+            }
+        } else {
+            // Sử dụng API cũ nếu không có search/filter
         let query = `page=${current}&size=${pageSize}`;
         if (filter) {
             query += `&${filter}`;
@@ -47,29 +82,13 @@ const JobCard = (props: IProps) => {
             query += `&${sortQuery}`;
         }
 
-        //check query string
-        const queryLocation = searchParams.get("location");
-        const querySkills = searchParams.get("skills")
-        if (queryLocation || querySkills) {
-            let q = "";
-            if (queryLocation) {
-                q = sfIn("location", queryLocation.split(",")).toString();
-            }
-
-            if (querySkills) {
-                q = queryLocation ?
-                    q + " and " + `${sfIn("skills", querySkills.split(","))}`
-                    : `${sfIn("skills", querySkills.split(","))}`;
-            }
-
-            query += `&filter=${encodeURIComponent(q)}`;
-        }
-
         const res = await callFetchJob(query);
         if (res && res.data) {
             setDisplayJob(res.data.result);
             setTotal(res.data.meta.total)
         }
+        }
+        
         setIsLoading(false);
     }
 
@@ -109,13 +128,49 @@ const JobCard = (props: IProps) => {
         }
     };
 
+    const getLevelColor = (level: string): string => {
+        switch (level?.toUpperCase()) {
+            case 'INTERN':
+                return '#87d068';
+            case 'FRESHER':
+                return '#2db7f5';
+            case 'JUNIOR':
+                return '#faad14';
+            case 'MIDDLE':
+                return '#fa8c16';
+            case 'SENIOR':
+                return '#f5222d';
+            default:
+                return '#d9d9d9';
+        }
+    };
+
+    const getLevelText = (level: string): string => {
+        switch (level?.toUpperCase()) {
+            case 'INTERN':
+                return 'Intern';
+            case 'FRESHER':
+                return 'Fresher';
+            case 'JUNIOR':
+                return 'Junior';
+            case 'MIDDLE':
+                return 'Middle';
+            case 'SENIOR':
+                return 'Senior';
+            default:
+                return level || 'N/A';
+        }
+    };
+
     return (
         <div className={`${styles["card-job-section"]}`}>
+            <div className="job-list-anchor" />
             <div className={`${styles["job-content"]}`}>
                 <Spin spinning={isLoading} tip="Loading...">
                     <Row gutter={[28, 28]}>
                         <Col span={24}>
                             <div className='horizontal-line'></div>
+                            
                             <div className={isMobile ? styles["dflex-mobile"] : styles["dflex-pc"]}>
                                 <span
                                     style={{
@@ -131,7 +186,8 @@ const JobCard = (props: IProps) => {
                                         transition: 'color 0.3s ease',
                                     }}
 
-                                >Đề xuất Công Việc Mới Nhất</span>
+                                >
+                                    Đề xuất Công Việc Mới Nhất</span>
 
                                 {!showPagination &&
                                     <Link to="job">Xem tất cả</Link>
@@ -160,12 +216,89 @@ const JobCard = (props: IProps) => {
                                         </div>
                                         <div className={styles["card-job-right"]}>
                                             <div className={styles["job-title"]}>{item.name}</div>
+                                            
+                                            {/* Company name */}
+                                            <div style={{ 
+                                                fontSize: '14px', 
+                                                color: '#666', 
+                                                marginBottom: '8px',
+                                                fontWeight: '500'
+                                            }}>
+                                                {item.company?.name}
+                                            </div>
+                                            
+                                            {/* Location and Salary */}
+                                            <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
                                             <div className={styles["job-location"]}>
                                                 <EnvironmentOutlined />&nbsp;{getLocationName(item.location)}
                                             </div>
                                             <div className={styles["job-salary"]}>
                                                 <ThunderboltOutlined />&nbsp;{(item.salary + "")?.replace(/\B(?=(\d{3})+(?!\d))/g, ',')} đ
                                             </div>
+                                            </div>
+                                            
+                                            {/* Level */}
+                                            {item.level && (
+                                                <div style={{ marginBottom: '8px' }}>
+                                                    <Tag 
+                                                        icon={<TrophyOutlined />}
+                                                        color={getLevelColor(item.level)}
+                                                        style={{ 
+                                                            borderRadius: '12px',
+                                                            padding: '2px 8px',
+                                                            fontSize: '12px',
+                                                            fontWeight: '500'
+                                                        }}
+                                                    >
+                                                        {getLevelText(item.level)}
+                                                    </Tag>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Skills */}
+                                            {item.skills && item.skills.length > 0 && (
+                                                <div style={{ marginBottom: '8px' }}>
+                                                    <div style={{ 
+                                                        display: 'flex', 
+                                                        flexWrap: 'wrap', 
+                                                        gap: '4px',
+                                                        alignItems: 'center'
+                                                    }}>
+                                                        <CodeOutlined style={{ 
+                                                            color: '#666', 
+                                                            fontSize: '12px',
+                                                            marginRight: '4px'
+                                                        }} />
+                                                        {item.skills.slice(0, 3).map((skill, index) => (
+                                                            <Tag
+                                                                key={index}
+                                                                style={{
+                                                                    borderRadius: '8px',
+                                                                    padding: '1px 6px',
+                                                                    fontSize: '11px',
+                                                                    backgroundColor: '#f0f0f0',
+                                                                    color: '#666',
+                                                                    border: 'none',
+                                                                    margin: 0
+                                                                }}
+                                                            >
+                                                                {skill.name}
+                                                            </Tag>
+                                                        ))}
+                                                        {item.skills.length > 3 && (
+                                                            <span style={{ 
+                                                                fontSize: '11px', 
+                                                                color: '#999',
+                                                                marginLeft: '4px'
+                                                            }}>
+                                                                +{item.skills.length - 3}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Time */}
                                             <div className={styles["job-updatedAt"]}>
                                                 {getTimeDifference(item.updatedAt ?? item.createdAt)}
                                             </div>

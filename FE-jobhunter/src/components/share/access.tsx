@@ -14,20 +14,38 @@ const Access = (props: IProps) => {
     const [allow, setAllow] = useState<boolean>(true);
 
     const permissions = useAppSelector(state => state.account.user.role.permissions);
+    const user = useAppSelector(state => state.account.user);
+    const isSuperAdmin = user?.role?.name === 'SUPER_ADMIN';
 
     useEffect(() => {
+        // Debug log
+        console.log('Access component - User role:', user?.role?.name);
+        console.log('Access component - Is SuperAdmin:', isSuperAdmin);
+        console.log('Access component - Permissions:', permissions);
+        console.log('Access component - Required permission:', permission);
+        
+        // SUPER_ADMIN có quyền truy cập tất cả
+        if (isSuperAdmin) {
+            console.log('Access component - SuperAdmin access granted');
+            setAllow(true);
+            return;
+        }
+
         if (permissions?.length) {
-            const check = permissions.find(item =>
+            const check = permissions.find((item: any) =>
                 item.apiPath === permission.apiPath
                 && item.method === permission.method
                 && item.module === permission.module
             )
             if (check) {
+                console.log('Access component - Permission check passed');
                 setAllow(true)
-            } else
+            } else {
+                console.log('Access component - Permission check failed');
                 setAllow(false);
+            }
         }
-    }, [permissions])
+    }, [permissions, isSuperAdmin])
 
     return (
         <>

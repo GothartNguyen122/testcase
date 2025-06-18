@@ -13,6 +13,7 @@ public class ResUpdateUserDTO {
     private String name;
     private GenderEnum gender;
     private String address;
+    private String phone;
     private int age;
     private Instant updatedAt;
 
