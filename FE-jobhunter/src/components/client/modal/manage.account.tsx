@@ -515,7 +515,9 @@ const UserUpdateInfo = (props: { open: boolean; onSuccess?: () => void }) => {
                         <ProForm.Item 
                             name="age" 
                             label="Tuổi"
+                            required
                             rules={[
+                                { required: true, message: 'Vui lòng nhập tuổi!' },
                                 {
                                     validator: (_, value) => {
                                         if (value === undefined || value === null || value === '') {
@@ -553,9 +555,6 @@ const UserUpdateInfo = (props: { open: boolean; onSuccess?: () => void }) => {
                         <ProForm.Item 
                             name="gender" 
                             label="Giới tính"
-                            rules={[
-                                { required: true, message: 'Vui lòng chọn giới tính!' }
-                            ]}
                         >
                             <Select 
                                 placeholder="Chọn giới tính"
@@ -568,11 +567,6 @@ const UserUpdateInfo = (props: { open: boolean; onSuccess?: () => void }) => {
                         <ProForm.Item 
                             name="address" 
                             label="Địa chỉ"
-                            rules={[
-                                { required: true, message: 'Vui lòng nhập địa chỉ!' },
-                                { min: 5, message: 'Địa chỉ phải có ít nhất 5 ký tự!' },
-                                { max: 100, message: 'Địa chỉ không được quá 100 ký tự!' }
-                            ]}
                         >
                             <Input placeholder="Nhập địa chỉ" />
                         </ProForm.Item>

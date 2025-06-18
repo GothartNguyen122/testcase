@@ -1,0 +1,33 @@
+{
+  "name": "jobhunter-test-automation",
+  "version": "1.0.0",
+  "description": "Automated testing for JobHunter application",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --timeout 30000 test/**/*.js",
+    "test:apply": "mocha --timeout 30000 test/apply-job.test.js",
+    "test:headless": "mocha --timeout 30000 test/**/*.js --headless",
+    "test:profile": "mocha --timeout 30000 test/manage-profile.test.js",
+    "test:search": "mocha --timeout 30000 test/search-job.test.js",
+    "install:driver": "npx selenium-standalone install",
+    "start:driver": "npx selenium-standalone start"
+  },
+  "keywords": [
+    "testing",
+    "selenium",
+    "mocha",
+    "jobhunter"
+  ],
+  "author": "JobHunter Team",
+  "license": "MIT",
+  "devDependencies": {
+    "chromedriver": "^137.0.3",
+    "dotenv": "^16.3.1",
+    "mocha": "^10.2.0",
+    "selenium-standalone": "^8.3.0",
+    "selenium-webdriver": "^4.15.0"
+  },
+  "dependencies": {
+    "assert": "^2.1.0"
+  }
+}
