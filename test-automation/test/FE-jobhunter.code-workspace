@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../FE-jobhunter"
+		},
+		{
+			"path": "../../BE-jobhunter"
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
