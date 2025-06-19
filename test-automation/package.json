@@ -9,6 +9,13 @@
     "test:headless": "mocha --timeout 30000 test/**/*.js --headless",
     "test:profile": "mocha --timeout 30000 test/manage-profile.test.js",
     "test:search": "mocha --timeout 30000 test/search-job.test.js",
+    "test:menu": "node run-apply-tests.js",
+    "debug:testcase1": "node debug-apply-job/debug-testcase1.js",
+    "debug:testcase2": "node debug-apply-job/debug-testcase2.js",
+    "debug:testcase3": "node debug-apply-job/debug-testcase3.js",
+    "debug:testcase4": "node debug-apply-job/debug-testcase4.js",
+    "debug:testcase5": "node debug-apply-job/debug-testcase5.js",
+    "debug:modal": "node debug-apply-job/debug-modal.js",
     "install:driver": "npx selenium-standalone install",
     "start:driver": "npx selenium-standalone start"
   },
