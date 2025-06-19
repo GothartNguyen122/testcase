@@ -4,7 +4,7 @@ class DebugHelper {
     constructor(driver) {
         this.driver = driver;
     }
-
+    //OK
     // Tìm tất cả input elements trên trang
     async findAllInputs() {
         const inputs = await this.driver.findElements(By.css('input'));
