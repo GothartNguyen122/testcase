@@ -83,11 +83,11 @@ class DebugHelper {
             const tagName = await element.getTagName();
             const className = await element.getAttribute('class');
             
-            console.log(`Element check:`);
-            console.log(`  Tag: ${tagName}`);
-            console.log(`  Class: ${className}`);
-            console.log(`  Is Displayed: ${isDisplayed}`);
-            console.log(`  Is Enabled: ${isEnabled}`);
+            // console.log(`Element check:`);
+            // console.log(`  Tag: ${tagName}`);
+            // console.log(`  Class: ${className}`);
+            // console.log(`  Is Displayed: ${isDisplayed}`);
+            // console.log(`  Is Enabled: ${isEnabled}`);
             
             return isDisplayed && isEnabled;
         } catch (error) {
