@@ -18,13 +18,7 @@ describe('JobHunter - Search Job Test Cases', function() {
         // Tăng timeout cho after hook
         this.timeout(35000);
         try {
-            // Dừng lại để xem kết quả - không tắt driver ngay
-            console.log('\n=== TEST COMPLETED ===');
-            console.log('Driver will stay open for 30 seconds so you can see the results...');
-            console.log('Press Ctrl+C to stop the test and close the driver.');
-            // Chờ 30 giây trước khi tắt driver
             await new Promise(resolve => setTimeout(resolve, 30000));
-            
             console.log('Closing driver...');
             await testHelper.teardownDriver();
             console.log('Driver closed successfully');
@@ -46,11 +40,8 @@ describe('JobHunter - Search Job Test Cases', function() {
 
     it('Testcase 1: Tìm kiếm cơ bản với từ khóa', async function() {
         this.timeout(30000);
-        
         // Debug: In ra URL hiện tại
         const currentUrl = await testHelper.driver.getCurrentUrl();
-        console.log('Current URL:', currentUrl);
-        
         // Debug: Chờ trang load hoàn toàn
         await testHelper.driver.sleep(3000);
         
